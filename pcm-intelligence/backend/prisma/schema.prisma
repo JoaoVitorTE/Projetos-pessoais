@@ -1,0 +1,216 @@
+generator client {
+ provider = "prisma-client-js"
+}
+datasource db {
+ provider = "postgresql"
+ url = env("DATABASE_URL")
+}
+enum RoleName {
+ ADMIN
+ MANAGER
+ PLANNER
+ TECHNICIAN
+ VIEWER
+}
+model Role {
+ id String @id @default(cuid())
+ name RoleName @unique
+ users User[]
+}
+model User {
+ id String @id @default(cuid())
+ name String
+ email String @unique
+ passwordHash String
+ active Boolean @default(true)
+ roleId String
+ role Role @relation(fields: [roleId], references: [id])
+ sessions Session[]
+ audits AuditLog[]
+}
+model Session {
+ id String @id
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ expiresAt DateTime
+ @@index([expiresAt])
+}
+model Sector {
+ id String @id
+ name String @unique
+ equipment Equipment[]
+}
+model Equipment {
+ id String @id
+ name String
+ criticality Int
+ status String
+ isDemo Boolean @default(true)
+ sectorId String
+ sector Sector @relation(fields: [sectorId], references: [id])
+ interruptions Interruption[]
+ orders MaintenanceOrder[]
+ plans MaintenancePlan[]
+ @@index([sectorId, criticality])
+}
+model Technician {
+ id String @id
+ name String
+ specialty String
+ assignments TechnicianAssignment[]
+ plans MaintenancePlan[]
+ orders MaintenanceOrder[]
+}
+model Interruption {
+ id String @id
+ equipmentId String
+ equipment Equipment @relation(fields: [equipmentId], references: [id])
+ startedAt DateTime
+ endedAt DateTime
+ durationMinutes Int
+ type String
+ reason String
+ description String
+ status String @default("CLOSED")
+ source String @default("DEMO")
+ isDemo Boolean @default(true)
+ @@index([equipmentId, startedAt])
+}
+model MaintenanceOrder {
+ id String @id
+ equipmentId String
+ equipment Equipment @relation(fields: [equipmentId], references: [id])
+ technicianId String?
+ technician Technician? @relation(fields: [technicianId], references: [id])
+ type String
+ description String
+ priority Int
+ status String
+ openedAt DateTime
+ scheduledAt DateTime
+ completedAt DateTime?
+ notes String?
+ sapReference String?
+ isDemo Boolean @default(true)
+ assignments TechnicianAssignment[]
+ services ThirdPartyService[]
+ @@index([status, scheduledAt])
+}
+model TechnicianAssignment {
+ id String @id @default(cuid())
+ technicianId String
+ technician Technician @relation(fields: [technicianId], references: [id])
+ orderId String
+ order MaintenanceOrder @relation(fields: [orderId], references: [id])
+ startsAt DateTime
+ endsAt DateTime
+ @@index([technicianId, startsAt])
+}
+model MaintenancePlan {
+ id String @id
+ equipmentId String
+ equipment Equipment @relation(fields: [equipmentId], references: [id])
+ technicianId String
+ technician Technician @relation(fields: [technicianId], references: [id])
+ type String
+ intervalDays Int
+ nextExecution DateTime
+ active Boolean @default(true)
+ isDemo Boolean @default(true)
+ executions MaintenanceExecution[]
+ @@index([nextExecution])
+}
+model MaintenanceExecution {
+ id String @id @default(cuid())
+ planId String
+ plan MaintenancePlan @relation(fields: [planId], references: [id])
+ executedAt DateTime
+ notes String
+}
+model ThirdPartyService {
+ id String @id
+ provider String
+ description String
+ executedAt DateTime
+ internalOwner String
+ orderId String
+ order MaintenanceOrder @relation(fields: [orderId], references: [id])
+ purchaseReference String?
+ amount Decimal? @db.Decimal(12,2)
+ status String
+ pendingNotes String?
+ stageEnteredAt DateTime
+ isDemo Boolean @default(true)
+ documents ThirdPartyDocument[]
+ movements ThirdPartyMovement[]
+ @@index([status, stageEnteredAt])
+}
+model ThirdPartyDocument {
+ id String @id @default(cuid())
+ serviceId String
+ service ThirdPartyService @relation(fields: [serviceId], references: [id])
+ name String
+ reference String
+}
+model DocumentRequirement {
+ id String @id @default(cuid())
+ name String @unique
+ active Boolean @default(true)
+}
+model ThirdPartyMovement {
+ id String @id @default(cuid())
+ serviceId String
+ service ThirdPartyService @relation(fields: [serviceId], references: [id])
+ status String
+ occurredAt DateTime
+ actor String
+ notes String
+}
+model CompressedAirReading {
+ id String @id
+ compressor String
+ sector String
+ pressure Float
+ flow Float
+ energyKwh Float
+ measuredAt DateTime
+ operatingState String
+ isDemo Boolean @default(true)
+ @@index([compressor, measuredAt])
+}
+model LeakInspection {
+ id String @id @default(cuid())
+ compressor String
+ inspectedAt DateTime
+ method String
+ findings String
+ repairStatus String
+ isDemo Boolean @default(true)
+}
+model Alert {
+ id String @id @default(cuid())
+ equipmentId String?
+ message String
+ evidence Json
+ createdAt DateTime @default(now())
+ isDemo Boolean @default(true)
+}
+model ImportBatch {
+ id String @id @default(cuid())
+ source String
+ status String
+ createdAt DateTime @default(now())
+ rowCount Int
+ errors Json
+ isDemo Boolean @default(true)
+}
+model AuditLog {
+ id String @id @default(cuid())
+ userId String?
+ user User? @relation(fields: [userId], references: [id])
+ action String
+ entity String
+ metadata Json
+ createdAt DateTime @default(now())
+ @@index([createdAt])
+}
