@@ -42,3 +42,7 @@ A interface exibe contagens reais do banco fictício, **não indicadores operaci
 Comandos: `npm run build` verifica TypeScript e gera os builds; `npm test` roda integração; `npm run db:migrate` aplica migrations; `npm run db:seed` carrega a demonstração. Não execute seed/testes sobre dados reais. `DATA_MODE` aceita apenas `demo` nesta versão.
 
 A API de produção pode ser iniciada com `npm run start -w backend` depois do build, mas uma implantação exige HTTPS, reverse proxy, frontend servido no mesmo domínio, backup, revisão de segurança e gestão de segredos. Nenhuma implantação de produção foi realizada.
+
+## Build na Vercel
+
+Para publicar a interface, use Root Directory `pcm-intelligence`; o `vercel.json` configura `npm run build:frontend` e saída `frontend/dist`. API e PostgreSQL precisam de hospedagem própria: consulte [GitHub e hospedagem](docs/GITHUB-E-HOSPEDAGEM.md). O build completo gera automaticamente o Prisma Client antes do TypeScript.

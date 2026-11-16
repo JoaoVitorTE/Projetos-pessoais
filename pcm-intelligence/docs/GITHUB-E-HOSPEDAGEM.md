@@ -34,6 +34,18 @@ Para uma implantação completa, será necessário:
 - FRONTEND_ORIGIN com a URL HTTPS final, NODE_ENV=production e DATA_MODE=demo no backend. DATABASE_URL e demais segredos somente no provedor da API.
 - Teste completo de login/logout, cookies, permissões, proxy e conexão com banco após a implantação.
 
-Não existe configuração de publicação automática neste pacote. Contas, limites gratuitos e eventual cobrança dependem dos provedores; nenhuma hospedagem foi criada ou contratada.
+O pacote contém vercel.json para publicar somente o frontend. Contas, limites gratuitos e eventual cobrança dependem dos provedores; nenhuma hospedagem foi criada ou contratada.
 
 Os dados incluídos são fictícios. Para apresentação, use credenciais próprias da demonstração. Não use nome, logotipo, dados ou credenciais reais de uma empresa sem autorização. Este pacote não contém dados reais nem integrações com SAP ou SKA.
+
+
+## Configuração da Vercel para o frontend
+
+- Root Directory: `pcm-intelligence` (pasta dentro do repositório Projetos-pessoais).
+- Build Command: `npm run build:frontend`.
+- Output Directory: `frontend/dist`.
+- Install Command: `npm ci`.
+
+O vercel.json nessa pasta define esses comandos. Se houver overrides antigos no painel, atualize-os ou desative-os para usar o arquivo. Execute Redeploy após receber a correção; se houver client Prisma antigo em cache, desmarque a reutilização do cache.
+
+O build completo local continua sendo `npm run build`: ele gera o Prisma Client antes de compilar o backend. A geração não aplica migrations, não executa seed e não exige conexão com banco. Não coloque credenciais do banco nas variáveis do frontend. A publicação estática só permite carregar a interface; login e consultas precisam da API implantada e do encaminhamento /api descritos acima.
