@@ -11,6 +11,8 @@ cd C:\caminho\pcm-intelligence
 Copy-Item backend\.env.example backend\.env
 ```
 
+Para PostgreSQL local, mantenha `DATABASE_URL` e `DATABASE_URL_UNPOOLED` com o mesmo endereço do Compose. Para Neon, use o endereço com pool em `DATABASE_URL` e o direto em `DATABASE_URL_UNPOOLED`.
+
 Edite `backend\.env` e preencha `SEED_PASSWORD` com uma senha local de pelo menos 12 caracteres. Não compartilhe esse arquivo. As credenciais do PostgreSQL no exemplo são exclusivamente para desenvolvimento local; se alterar `POSTGRES_PASSWORD`, ajuste também `DATABASE_URL`.
 
 ```powershell
@@ -46,3 +48,7 @@ A API de produção pode ser iniciada com `npm run start -w backend` depois do b
 ## Build na Vercel
 
 Para publicar a interface, use Root Directory `pcm-intelligence`; o `vercel.json` configura `npm run build:frontend` e saída `frontend/dist`. API e PostgreSQL precisam de hospedagem própria: consulte [GitHub e hospedagem](docs/GITHUB-E-HOSPEDAGEM.md). O build completo gera automaticamente o Prisma Client antes do TypeScript.
+
+## Conexão Neon
+
+O backend aceita `DATABASE_URL` para tráfego da aplicação e `DATABASE_URL_UNPOOLED` para migrations Prisma. Os valores reais ficam somente em `backend/.env` ou nos segredos da hospedagem da API. Nunca use prefixo `VITE_` nem envie esses valores ao GitHub. Veja [configuração Neon](docs/NEON.md).

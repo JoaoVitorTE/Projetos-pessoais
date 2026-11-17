@@ -8,3 +8,7 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 *.zip
+
+# Configuração local de agentes e vinculação Neon
+.codex/
+.neon
