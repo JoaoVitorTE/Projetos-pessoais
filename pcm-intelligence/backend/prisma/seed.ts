@@ -54,6 +54,10 @@ async function main() {
         data: data.technicians,
         skipDuplicates: true,
       });
+      await tx.user.updateMany({
+        where: { email: "technician@pcm.demo", technicianId: null },
+        data: { technicianId: "TEC-1" },
+      });
       await tx.interruption.createMany({
         data: data.interruptions,
         skipDuplicates: true,

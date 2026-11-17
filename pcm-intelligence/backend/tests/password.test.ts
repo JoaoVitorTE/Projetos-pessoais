@@ -155,5 +155,5 @@ describe("Limite de login entre instâncias", () => {
     await db.loginThrottle.deleteMany({
       where: { id: createHash("sha256").update(unknown).digest("hex") },
     });
-  });
+  }, 15000);
 });

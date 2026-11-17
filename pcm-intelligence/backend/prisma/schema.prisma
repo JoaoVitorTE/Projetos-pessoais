@@ -25,10 +25,13 @@ model User {
  passwordHash String
  mustChangePassword Boolean @default(false)
  active Boolean @default(true)
+ technicianId String? @unique
+ technician Technician? @relation(fields: [technicianId], references: [id])
  roleId String
  role Role @relation(fields: [roleId], references: [id])
  sessions Session[]
  audits AuditLog[]
+ orderChanges OrderHistory[]
 }
 model Session {
  id String @id
@@ -59,6 +62,7 @@ model Technician {
  id String @id
  name String
  specialty String
+ user User?
  assignments TechnicianAssignment[]
  plans MaintenancePlan[]
  orders MaintenanceOrder[]
@@ -68,8 +72,8 @@ model Interruption {
  equipmentId String
  equipment Equipment @relation(fields: [equipmentId], references: [id])
  startedAt DateTime
- endedAt DateTime
- durationMinutes Int
+ endedAt DateTime?
+ durationMinutes Int?
  type String
  reason String
  description String
@@ -80,6 +84,8 @@ model Interruption {
 }
 model MaintenanceOrder {
  id String @id
+ version Int @default(1)
+ history OrderHistory[]
  equipmentId String
  equipment Equipment @relation(fields: [equipmentId], references: [id])
  technicianId String?
@@ -110,6 +116,8 @@ model TechnicianAssignment {
 }
 model MaintenancePlan {
  id String @id
+ title String @default("Plano de manutenção")
+ version Int @default(1)
  equipmentId String
  equipment Equipment @relation(fields: [equipmentId], references: [id])
  technicianId String
@@ -127,13 +135,16 @@ model MaintenanceExecution {
  planId String
  plan MaintenancePlan @relation(fields: [planId], references: [id])
  executedAt DateTime
+ scheduledFor DateTime?
+ technicianName String?
  notes String
 }
 model ThirdPartyService {
  id String @id
+ version Int @default(1)
  provider String
  description String
- executedAt DateTime
+ executedAt DateTime?
  internalOwner String
  orderId String
  order MaintenanceOrder @relation(fields: [orderId], references: [id])
@@ -153,9 +164,14 @@ model ThirdPartyDocument {
  service ThirdPartyService @relation(fields: [serviceId], references: [id])
  name String
  reference String
+ requirementId String?
+ requirement DocumentRequirement? @relation(fields: [requirementId], references: [id])
+ verified Boolean @default(false)
+ receivedAt DateTime @default(now())
 }
 model DocumentRequirement {
  id String @id @default(cuid())
+ documents ThirdPartyDocument[]
  name String @unique
  active Boolean @default(true)
 }
@@ -221,4 +237,18 @@ model LoginThrottle {
  id String @id
  attempts Int @default(1)
  windowStartedAt DateTime @default(now())
+}
+
+model OrderHistory {
+ id String @id @default(cuid())
+ orderId String
+ order MaintenanceOrder @relation(fields: [orderId], references: [id])
+ userId String
+ user User @relation(fields: [userId], references: [id])
+ action String
+ before Json?
+ after Json
+ notes String?
+ createdAt DateTime @default(now())
+ @@index([orderId, createdAt])
 }

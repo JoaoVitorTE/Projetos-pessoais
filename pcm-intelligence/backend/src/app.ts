@@ -4,6 +4,10 @@ import cors from "cors";
 import helmet from "helmet";
 import { PrismaClient, type RoleName } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
+import {
+  createOperationsRouter,
+  HttpError,
+} from "./modules/operations/router.js";
 import { allowLogin } from "./services/login-throttle.js";
 import { randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
@@ -53,6 +57,8 @@ export function createApp(db: PrismaClient) {
       await db.$queryRaw`SELECT 1`;
       res.json({
         status: "ok",
+        version: "0.2.0",
+        phase: 2,
         database: "connected",
         dataMode: process.env.DATA_MODE,
       });
@@ -79,12 +85,10 @@ export function createApp(db: PrismaClient) {
           "/api/auth/change-password",
         ].includes(req.path)
       ) {
-        return res
-          .status(403)
-          .json({
-            error: "Troque a senha temporária para continuar",
-            code: "PASSWORD_CHANGE_REQUIRED",
-          });
+        return res.status(403).json({
+          error: "Troque a senha temporária para continuar",
+          code: "PASSWORD_CHANGE_REQUIRED",
+        });
       }
       res.locals.user = session.user;
       next();
@@ -105,12 +109,14 @@ export function createApp(db: PrismaClient) {
     email: string;
     role: { name: RoleName };
     mustChangePassword: boolean;
+    technicianId: string | null;
   }) => ({
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role.name,
     mustChangePassword: u.mustChangePassword,
+    technicianId: u.technicianId,
   });
   app.post("/api/auth/login", async (req, res, next) => {
     try {
@@ -122,13 +128,9 @@ export function createApp(db: PrismaClient) {
         .parse(req.body);
       const email = body.email.toLowerCase();
       if (!(await allowLogin(db, email))) {
-        return res
-          .status(429)
-          .set("Retry-After", "900")
-          .json({
-            error:
-              "Muitas tentativas. Aguarde 15 minutos para tentar novamente.",
-          });
+        return res.status(429).set("Retry-After", "900").json({
+          error: "Muitas tentativas. Aguarde 15 minutos para tentar novamente.",
+        });
       }
       const user = await db.user.findUnique({
         where: { email },
@@ -265,7 +267,7 @@ export function createApp(db: PrismaClient) {
       ]);
       res.json({
         dataMode: process.env.DATA_MODE,
-        phase: 1,
+        phase: 2,
         counts: Object.fromEntries(
           [
             "equipment",
@@ -321,6 +323,7 @@ export function createApp(db: PrismaClient) {
       }
     },
   );
+  app.use("/api", auth, createOperationsRouter(db));
   app.use((_req, res) =>
     res.status(404).json({ error: "Recurso não encontrado" }),
   );
@@ -331,6 +334,19 @@ export function createApp(db: PrismaClient) {
       res: express.Response,
       _next: express.NextFunction,
     ) => {
+      if (error instanceof HttpError)
+        return res.status(error.status).json({ error: error.message });
+      const code = (error as { code?: string })?.code;
+      if (code === "P2002")
+        return res
+          .status(409)
+          .json({ error: "Já existe um registro com esse identificador" });
+      if (code === "P2003")
+        return res
+          .status(400)
+          .json({ error: "Referência de cadastro inválida" });
+      if (code === "P2025")
+        return res.status(404).json({ error: "Registro não encontrado" });
       if (error instanceof z.ZodError)
         return res.status(400).json({
           error: "Entrada inválida",

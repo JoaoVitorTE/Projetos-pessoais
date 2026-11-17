@@ -1,6 +1,10 @@
-# PCM Intelligence — Fase 1
+# PCM Intelligence — Fase 2
 
-Fundação funcional de uma plataforma de manutenção industrial, com dados fictícios, autenticação e cinco perfis. Não possui integração com SAP/SKA nem envia comandos industriais. Dashboard operacional, CRUD de OS, calendário, terceiros, assistente, análises e importação continuam nas próximas fases.
+MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Dados fictícios, sem integração SAP/SKA e sem comandos industriais.
+
+Disponível: dashboard calculado; equipamentos; interrupções e recorrência de motivos; OS internas com histórico e exportação CSV; preventivas/lubrificação com calendário e conclusão; terceiros com checklist configurável, etapas, histórico e rascunho para revisão humana. A senha e os registros da Fase 1 são preservados nas atualizações.
+
+Assistente, alertas estatísticos avançados, importações CSV/XLSX, sensores simulados e relatórios PDF/Excel permanecem para as fases seguintes. Consulte [escopo, permissões e regras da Fase 2](docs/PHASE2.md).
 
 ## Execução local no Windows (PowerShell)
 
@@ -55,7 +59,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os testes cobrem login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 50 testes cobrem fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 
@@ -66,4 +70,4 @@ Os testes cobrem login, autorização dos cinco perfis, auditoria, cookies, logo
 - `backend/tests/`: integração com PostgreSQL real isolado.
 - `docs/`: arquitetura, hospedagem, Neon e evidências de validação.
 
-Dados: 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas + 30 planos de lubrificação, 25 processos e 336 leituras de ar comprimido.
+Dados iniciais (os cadastros e apontamentos alteram as contagens): 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas + 30 planos de lubrificação, 25 processos e 336 leituras de ar comprimido.

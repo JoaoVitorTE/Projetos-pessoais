@@ -44,6 +44,7 @@ export function PasswordForm({ required, onChanged }: Props) {
         <label>
           Senha atual
           <input
+            aria-label="Senha atual"
             type="password"
             required
             autoComplete="current-password"
@@ -54,6 +55,7 @@ export function PasswordForm({ required, onChanged }: Props) {
         <label>
           Nova senha (mínimo 12 caracteres)
           <input
+            aria-label="Nova senha (mínimo 12 caracteres)"
             type="password"
             required
             minLength={12}
@@ -66,6 +68,7 @@ export function PasswordForm({ required, onChanged }: Props) {
         <label>
           Confirmar nova senha
           <input
+            aria-label="Confirmar nova senha"
             type="password"
             required
             minLength={12}

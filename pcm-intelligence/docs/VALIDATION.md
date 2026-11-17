@@ -39,3 +39,9 @@ A versão de código `7ea1f7c4e7a66877c095dec0f950612d6fd13336` foi publicada em
 Contagens publicadas: 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas, 30 lubrificações, 25 processos de terceiros e 336 leituras. Os módulos operacionais ainda estão indicados como futuros; esta publicação não representa a conclusão das cinco fases do projeto.
 
 A validação remota encontrou e corrigiu incompatibilidade CommonJS/ES Modules e roteamento de URLs aninhadas da API. A versão final usa `type=module` na raiz e encaminhamento explícito `/api/:path*` para a função `api/index.ts`.
+
+## Fase 2 — 17/11/2026
+
+A Fase 2 adiciona seis módulos operacionais descritos em PHASE2.md. Build aprovado; 50 testes passaram com PostgreSQL real isolado. Chromium percorreu gravações, edições, histórico, CSV, calendário, execução de plano e fluxo de terceiros com checklist e nove movimentações; os seis módulos foram conferidos em largura de 390 px, sem overflow horizontal e sem erros JavaScript. Gráficos foram conferidos renderizados em desktop e celular.
+
+As migrations são aditivas: vínculo de técnico, versões, histórico de OS, metadados de execução/documentos e aceitação de solicitações sem data de execução inventada. Não removem registros nem alteram hashes de senha. A aplicação no Neon principal é precedida de validação na branch pcm-validation; o seed não é reexecutado em produção.
