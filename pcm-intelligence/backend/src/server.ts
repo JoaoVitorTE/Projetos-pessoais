@@ -2,10 +2,8 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { createApp, logger } from "./app.js";
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL não configurada");
-if (process.env.DATA_MODE !== "demo")
-  throw new Error(
-    "Esta versão aceita apenas DATA_MODE=demo; dados reais ainda não habilitados",
-  );
+if (!["demo", "operational"].includes(process.env.DATA_MODE || ""))
+  throw new Error("Configure DATA_MODE=demo ou operational");
 const db = new PrismaClient();
 await db.$connect();
 const server = createApp(db).listen(

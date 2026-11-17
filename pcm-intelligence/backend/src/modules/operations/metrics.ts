@@ -121,11 +121,16 @@ export async function dashboard(db: PrismaClient, f: Filters) {
     done = executions.length;
   return {
     period: { from, to, groupingTimezone: "UTC" },
-    dataMode: "demo",
+    dataMode: process.env.DATA_MODE,
     indicators: {
       equipment: equipment.length,
       running: equipment.filter((e) => e.status === "RUNNING").length,
-      stopped: equipment.filter((e) => e.status !== "RUNNING").length,
+      stopped: equipment.filter((e) =>
+        ["STOPPED", "MAINTENANCE"].includes(e.status),
+      ).length,
+      unknown: equipment.filter(
+        (e) => !["RUNNING", "STOPPED", "MAINTENANCE"].includes(e.status),
+      ).length,
       interruptions: interruptions.length,
       downtimeMinutes: Math.round(
         [...eq.values()].reduce((n, row) => n + row.minutes, 0),

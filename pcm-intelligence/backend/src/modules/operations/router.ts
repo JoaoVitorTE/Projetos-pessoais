@@ -30,7 +30,7 @@ const equipmentBody = z
     name: z.string().trim().min(3).max(120),
     sectorId: z.string().min(1),
     criticality: z.number().int().min(1).max(3),
-    status: z.enum(["RUNNING", "STOPPED", "MAINTENANCE"]),
+    status: z.enum(["UNKNOWN", "RUNNING", "STOPPED", "MAINTENANCE"]),
   })
   .strict();
 const interruptionBody = z
@@ -51,16 +51,28 @@ export function createOperationsRouter(db: PrismaClient) {
       const [sectors, technicians, equipment] = await Promise.all([
         db.sector.findMany({ orderBy: { name: "asc" } }),
         db.technician.findMany({
-          select: { id: true, name: true, specialty: true },
+          select: { id: true, name: true, specialty: true, active: true },
           orderBy: { name: "asc" },
         }),
         db.equipment.findMany({
-          select: { id: true, name: true, sectorId: true, criticality: true },
+          select: {
+            id: true,
+            name: true,
+            sectorId: true,
+            criticality: true,
+            status: true,
+            version: true,
+          },
           orderBy: { id: "asc" },
           take: 1000,
         }),
       ]);
-      res.json({ sectors, technicians, equipment });
+      res.json({
+        sectors,
+        technicians,
+        equipment,
+        mode: process.env.DATA_MODE,
+      });
     }),
   );
   r.get(
@@ -105,7 +117,7 @@ export function createOperationsRouter(db: PrismaClient) {
       const body = equipmentBody.parse(req.body);
       const row = await db.$transaction(async (tx) => {
         const row = await tx.equipment.create({
-          data: { ...body, isDemo: true },
+          data: { ...body, isDemo: process.env.DATA_MODE !== "operational" },
         });
         await audit(tx, actor(res), "EQUIPMENT_CREATED", "Equipment", row);
         return row;
@@ -117,15 +129,25 @@ export function createOperationsRouter(db: PrismaClient) {
     "/equipment/:id",
     run(async (req, res) => {
       requireRole(res, planners);
-      const body = equipmentBody.omit({ id: true }).parse(req.body);
+      const body = equipmentBody
+        .omit({ id: true })
+        .extend({ version: z.number().int().positive() })
+        .parse(req.body);
       const row = await db.$transaction(async (tx) => {
         const before = must(
           await tx.equipment.findUnique({ where: { id: req.params.id } }),
         );
-        const row = await tx.equipment.update({
-          where: { id: before.id },
-          data: body,
+        if (before.version !== body.version)
+          throw new HttpError(409, "Equipamento alterado. Atualize a tela.");
+        const updated = await tx.equipment.updateMany({
+          where: { id: before.id, version: body.version },
+          data: { ...body, version: { increment: 1 } },
         });
+        if (!updated.count)
+          throw new HttpError(409, "Equipamento alterado. Atualize a tela.");
+        const row = must(
+          await tx.equipment.findUnique({ where: { id: before.id } }),
+        );
         await audit(tx, actor(res), "EQUIPMENT_UPDATED", "Equipment", {
           before,
           after: row,
@@ -252,8 +274,8 @@ export function createOperationsRouter(db: PrismaClient) {
           data: {
             ...data,
             id: "INT-" + randomUUID(),
-            source: "UI-DEMO",
-            isDemo: true,
+            source: process.env.DATA_MODE === "operational" ? "UI" : "UI-DEMO",
+            isDemo: process.env.DATA_MODE !== "operational",
           },
         });
         await audit(
@@ -272,15 +294,25 @@ export function createOperationsRouter(db: PrismaClient) {
     "/interruptions/:id",
     run(async (req, res) => {
       requireRole(res, planners);
-      const data = interruptionData(interruptionBody.parse(req.body));
+      const { version, ...body } = interruptionBody
+        .extend({ version: z.number().int().positive() })
+        .parse(req.body);
+      const data = interruptionData(body);
       const row = await db.$transaction(async (tx) => {
         const before = must(
           await tx.interruption.findUnique({ where: { id: req.params.id } }),
         );
-        const row = await tx.interruption.update({
-          where: { id: before.id },
-          data,
+        if (before.version !== version)
+          throw new HttpError(409, "Interrupção alterada. Atualize a tela.");
+        const updated = await tx.interruption.updateMany({
+          where: { id: before.id, version },
+          data: { ...data, version: { increment: 1 } },
         });
+        if (!updated.count)
+          throw new HttpError(409, "Interrupção alterada. Atualize a tela.");
+        const row = must(
+          await tx.interruption.findUnique({ where: { id: before.id } }),
+        );
         await audit(tx, actor(res), "INTERRUPTION_UPDATED", "Interruption", {
           before,
           after: row,

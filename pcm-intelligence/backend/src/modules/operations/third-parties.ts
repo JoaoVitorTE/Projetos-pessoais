@@ -224,7 +224,7 @@ export function thirdPartiesRouter(db: PrismaClient) {
               id: "TER-" + randomUUID().slice(0, 8),
               status: "REQUESTED",
               stageEnteredAt: now,
-              isDemo: true,
+              isDemo: process.env.DATA_MODE !== "operational",
               movements: {
                 create: {
                   status: "REQUESTED",

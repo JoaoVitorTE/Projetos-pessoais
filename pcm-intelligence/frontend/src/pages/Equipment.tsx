@@ -44,7 +44,7 @@ export function EquipmentPage({
   return (
     <>
       <div className="action-row">
-        <p>Cadastro local de equipamentos fictícios e sua situação atual.</p>
+        <p>Cadastro de equipamentos e sua situação informada.</p>
         {canPlan(user) && (
           <button onClick={() => setEdit(null)}>Cadastrar equipamento</button>
         )}
@@ -69,7 +69,7 @@ export function EquipmentPage({
             }}
           >
             <option value="">Todas</option>
-            {["RUNNING", "STOPPED", "MAINTENANCE"].map((x) => (
+            {["UNKNOWN", "RUNNING", "STOPPED", "MAINTENANCE"].map((x) => (
               <option value={x} key={x}>
                 {statusLabel[x]}
               </option>
@@ -164,7 +164,7 @@ function EquipmentForm({
         name: "",
         sectorId: "",
         criticality: 2,
-        status: "RUNNING",
+        status: "UNKNOWN",
       },
     ),
     [busy, setBusy] = useState(false),
@@ -187,10 +187,18 @@ function EquipmentForm({
               criticality: form.criticality,
               status: form.status,
             };
-            await api("/equipment" + (initial ? "/" + initial.id : ""), {
-              method: initial ? "PATCH" : "POST",
-              body: JSON.stringify(initial ? body : { ...body, id: form.id }),
-            });
+            await api(
+              "/equipment" +
+                (initial ? "/" + encodeURIComponent(initial.id) : ""),
+              {
+                method: initial ? "PATCH" : "POST",
+                body: JSON.stringify(
+                  initial
+                    ? { ...body, version: initial.version }
+                    : { ...body, id: form.id },
+                ),
+              },
+            );
             onSaved();
           } catch (e) {
             setError((e as Error).message);
@@ -263,7 +271,7 @@ function EquipmentForm({
             value={form.status}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
           >
-            {["RUNNING", "STOPPED", "MAINTENANCE"].map((x) => (
+            {["UNKNOWN", "RUNNING", "STOPPED", "MAINTENANCE"].map((x) => (
               <option key={x} value={x}>
                 {statusLabel[x]}
               </option>

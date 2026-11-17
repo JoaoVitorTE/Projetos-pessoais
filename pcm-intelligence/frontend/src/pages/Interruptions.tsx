@@ -241,6 +241,7 @@ function InterruptionForm({
               method: initial ? "PATCH" : "POST",
               body: JSON.stringify({
                 ...form,
+                ...(initial ? { version: initial.version } : {}),
                 startedAt: new Date(form.startedAt).toISOString(),
                 endedAt: form.endedAt
                   ? new Date(form.endedAt).toISOString()

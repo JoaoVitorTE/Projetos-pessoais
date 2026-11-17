@@ -104,7 +104,7 @@ export function plansRouter(db: PrismaClient) {
           data: {
             ...data,
             id: "PLAN-" + randomUUID().slice(0, 8),
-            isDemo: true,
+            isDemo: process.env.DATA_MODE !== "operational",
           },
         });
         await audit(tx, actor(res), "PLAN_CREATED", "MaintenancePlan", row);

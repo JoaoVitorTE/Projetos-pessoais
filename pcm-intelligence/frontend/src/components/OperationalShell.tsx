@@ -14,6 +14,11 @@ import {
   Handshake,
   Timer,
   Search,
+  FileInput,
+  FileBarChart,
+  Bot,
+  Bell,
+  Users,
 } from "lucide-react";
 import type { User, Lookups } from "../types/operations";
 import { useResource } from "../hooks/useResource";
@@ -26,6 +31,10 @@ const menu = [
   { id: "orders", label: "Ordens de serviço", icon: ClipboardList },
   { id: "plans", label: "Preventivas e lubrificação", icon: CalendarDays },
   { id: "third", label: "Serviços de terceiros", icon: Handshake },
+  { id: "imports", label: "Importações SAP / planilhas", icon: FileInput },
+  { id: "reports", label: "Relatório de preventivas", icon: FileBarChart },
+  { id: "assistant", label: "Assistente PCM", icon: Bot },
+  { id: "alerts", label: "Alertas", icon: Bell },
 ];
 const descriptions: Record<string, string> = {
   dashboard: "Visão calculada da manutenção e do planejamento.",
@@ -34,6 +43,12 @@ const descriptions: Record<string, string> = {
   orders: "Ordens locais, execução, prazos e histórico.",
   plans: "Planos de manutenção, calendário e registros de execução.",
   third: "Da solicitação ao tratamento financeiro, com revisão humana.",
+  imports:
+    "Importe arquivos autorizados, revise alterações e reconheça repetidos.",
+  reports: "Preventivas e lubrificações abertas, responsáveis e vencimentos.",
+  assistant: "Perguntas respondidas com os registros disponíveis.",
+  alerts: "Prazos e pendências que merecem acompanhamento.",
+  administration: "Usuários, técnicos e setores com controle de acesso.",
   security: "Controle da sua senha de acesso.",
   users: "Usuários e seus perfis de acesso.",
   audit: "Rastreabilidade das alterações e dos acessos.",
@@ -63,9 +78,11 @@ export function OperationalShell({
   };
   const title =
     menu.find((x) => x.id === tab)?.label ||
-    { security: "Minha senha", users: "Usuários e perfis", audit: "Auditoria" }[
-      tab
-    ];
+    {
+      security: "Minha senha",
+      administration: "Cadastros e acessos",
+      audit: "Auditoria",
+    }[tab];
   return (
     <div className="shell">
       <aside>
@@ -77,12 +94,24 @@ export function OperationalShell({
             <Factory size={21} />
           </span>
           <div>
-            Unidade demonstrativa<small>Operação com dados fictícios</small>
+            {lookups.data?.mode === "demo"
+              ? "Unidade demonstrativa"
+              : "Manutenção industrial"}
+            <small>
+              {lookups.data?.mode === "demo"
+                ? "Operação com dados fictícios"
+                : "Planejamento e controle"}
+            </small>
           </div>
         </div>
         <p className="nav-label">MANUTENÇÃO E PLANEJAMENTO</p>
         {menu
-          .filter((x) => x.id !== "third" || user.role !== "TECHNICIAN")
+          .filter(
+            (x) =>
+              (x.id !== "third" || user.role !== "TECHNICIAN") &&
+              (x.id !== "imports" ||
+                ["ADMIN", "MANAGER", "PLANNER"].includes(user.role)),
+          )
           .map((x) => (
             <button
               key={x.id}
@@ -101,13 +130,13 @@ export function OperationalShell({
           <LockKeyhole size={18} />
           Minha senha
         </button>
-        {user.role === "ADMIN" && (
+        {["ADMIN", "MANAGER", "PLANNER"].includes(user.role) && (
           <button
-            className={tab === "users" ? "nav active" : "nav"}
-            onClick={() => navigate("users")}
+            className={tab === "administration" ? "nav active" : "nav"}
+            onClick={() => navigate("administration")}
           >
             <ShieldCheck size={18} />
-            Usuários e perfis
+            Cadastros e acessos
           </button>
         )}
         {["ADMIN", "MANAGER"].includes(user.role) && (
@@ -119,22 +148,17 @@ export function OperationalShell({
             Auditoria
           </button>
         )}
-        <p className="nav-label">PRÓXIMAS FASES</p>
-        {[
-          "Assistente PCM e alertas",
-          "Importações e ar comprimido",
-          "Relatórios PDF / Excel",
-        ].map((x) => (
-          <div className="future" key={x}>
-            <LockKeyhole size={14} />
-            {x}
-            <small>Futuro</small>
-          </div>
-        ))}
+        <div className="future">
+          <LockKeyhole size={14} />
+          Sincronização SAP automática<small>Futura</small>
+        </div>
         <div className="aside-bottom">
           <span className="status-dot" />
-          Demonstração · Nenhum sistema industrial conectado
-          <p>PCM Intelligence · v0.2.0</p>
+          {lookups.data?.mode === "demo"
+            ? "Demonstração"
+            : "Registros locais"}{" "}
+          · Sem conexão a máquinas
+          <p>PCM Intelligence · v0.3.0</p>
         </div>
       </aside>
       <div className="main">
@@ -143,7 +167,9 @@ export function OperationalShell({
             Plataforma / <strong>{title}</strong>
           </span>
           <div>
-            <span className="badge">DEMONSTRAÇÃO</span>
+            <span className="badge">
+              {lookups.data?.mode === "demo" ? "DEMONSTRAÇÃO" : "PCM"}
+            </span>
             <button
               className="icon"
               aria-label="Alternar tema"
@@ -200,8 +226,9 @@ export function OperationalShell({
           <div className="notice compact-notice">
             <ShieldCheck size={19} />
             <p>
-              Dados fictícios. Ordens e processos são registros locais, sem
-              integração com SAP ou SKA.
+              {lookups.data?.mode === "demo" ? "Dados fictícios. " : ""}
+              Registros locais e cópias de arquivos importados. Alterações aqui
+              não atualizam o SAP.
             </p>
           </div>
           {error && (
@@ -245,15 +272,28 @@ export function OperationalShell({
                     required={false}
                     onChanged={onPasswordChanged}
                   />
+                ) : tab === "imports" ? (
+                  <ImportsPage
+                    lookups={lookups.data}
+                    onChanged={lookups.refresh}
+                  />
+                ) : tab === "reports" ? (
+                  <ReportsPage lookups={lookups.data} />
+                ) : tab === "assistant" ? (
+                  <AssistantPage />
+                ) : tab === "alerts" ? (
+                  <AlertsPage />
+                ) : tab === "administration" ? (
+                  <AdministrationPage user={user} onChanged={lookups.refresh} />
                 ) : (
-                  <SystemPage tab={tab === "users" ? "users" : "audit"} />
+                  <AuditPage />
                 )}
               </div>
             </Suspense>
           )}
           <footer>
             PCM Intelligence
-            <span>Fase 2 · Planejamento e controle com revisão humana</span>
+            <span>Importações, planejamento e controle com revisão humana</span>
           </footer>
         </main>
       </div>
@@ -293,6 +333,23 @@ const ThirdPartiesPage = lazy(() =>
   })),
 );
 
-const SystemPage = lazy(() =>
-  import("../pages/System").then((module) => ({ default: module.SystemPage })),
+const ImportsPage = lazy(() =>
+  import("../pages/Imports").then((m) => ({ default: m.ImportsPage })),
+);
+const ReportsPage = lazy(() =>
+  import("../pages/Reports").then((m) => ({ default: m.ReportsPage })),
+);
+const AssistantPage = lazy(() =>
+  import("../pages/Intelligence").then((m) => ({ default: m.AssistantPage })),
+);
+const AlertsPage = lazy(() =>
+  import("../pages/Intelligence").then((m) => ({ default: m.AlertsPage })),
+);
+const AdministrationPage = lazy(() =>
+  import("../pages/Administration").then((m) => ({
+    default: m.AdministrationPage,
+  })),
+);
+const AuditPage = lazy(() =>
+  import("../pages/Audit").then((m) => ({ default: m.AuditPage })),
 );

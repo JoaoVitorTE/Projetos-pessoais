@@ -32,7 +32,7 @@ const create = z
     type: z.enum(ORDER_TYPES),
     description: text,
     priority: z.number().int().min(1).max(3),
-    scheduledAt: date,
+    scheduledAt: date.nullable(),
     notes: optionalText,
     sapReference: z.string().trim().max(100).nullable().optional(),
   })
@@ -58,6 +58,7 @@ function whereOrders(
             { id: { contains: f.q, mode: "insensitive" } },
             { description: { contains: f.q, mode: "insensitive" } },
             { equipmentId: { contains: f.q, mode: "insensitive" } },
+            { sapReference: { contains: f.q, mode: "insensitive" } },
           ],
         }
       : {}),
@@ -113,8 +114,8 @@ export function ordersRouter(db: PrismaClient) {
           o.type,
           o.priority,
           o.technician?.name,
-          o.openedAt.toISOString(),
-          o.scheduledAt.toISOString(),
+          o.openedAt?.toISOString() || "",
+          o.scheduledAt?.toISOString() || "",
           o.status,
           o.description,
           o.sapReference,
@@ -123,8 +124,7 @@ export function ordersRouter(db: PrismaClient) {
       res
         .set({
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition":
-            'attachment; filename="ordens-locais-demo.csv"',
+          "Content-Disposition": 'attachment; filename="ordens-locais.csv"',
         })
         .send(
           "\uFEFF" + lines.map((row) => row.map(csv).join(";")).join("\r\n"),
@@ -154,6 +154,7 @@ export function ordersRouter(db: PrismaClient) {
           items.map((o) => ({
             ...o,
             overdue:
+              o.scheduledAt !== null &&
               o.scheduledAt < new Date() &&
               !["COMPLETED", "CANCELLED"].includes(o.status),
           })),
@@ -198,7 +199,7 @@ export function ordersRouter(db: PrismaClient) {
             id: "OS-LOCAL-" + randomUUID().slice(0, 8).toUpperCase(),
             openedAt: new Date(),
             status: "OPEN",
-            isDemo: true,
+            isDemo: process.env.DATA_MODE !== "operational",
           },
         });
         await tx.orderHistory.create({
@@ -207,7 +208,7 @@ export function ordersRouter(db: PrismaClient) {
             userId: user.id,
             action: "CREATED",
             after: snapshot(row),
-            notes: "Ordem interna de demonstração; não enviada ao SAP",
+            notes: "Registro local; não enviado ao SAP",
           },
         });
         await audit(tx, user, "ORDER_CREATED", "MaintenanceOrder", row);

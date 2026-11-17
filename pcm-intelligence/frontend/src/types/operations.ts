@@ -7,6 +7,7 @@ export type User = {
   mustChangePassword: boolean;
 };
 export type Equipment = {
+  version: number;
   id: string;
   name: string;
   sectorId: string;
@@ -15,8 +16,14 @@ export type Equipment = {
   sector?: { name: string };
 };
 export type Lookups = {
+  mode: "demo" | "operational";
   sectors: { id: string; name: string }[];
-  technicians: { id: string; name: string; specialty: string }[];
+  technicians: {
+    id: string;
+    name: string;
+    specialty: string;
+    active: boolean;
+  }[];
   equipment: Equipment[];
 };
 export type Page<T> = {
@@ -36,8 +43,8 @@ export type Order = {
   description: string;
   priority: number;
   status: string;
-  openedAt: string;
-  scheduledAt: string;
+  openedAt: string | null;
+  scheduledAt: string | null;
   completedAt: string | null;
   notes: string | null;
   sapReference: string | null;
@@ -73,6 +80,7 @@ export type Plan = {
   }[];
 };
 export type Interruption = {
+  version: number;
   id: string;
   equipmentId: string;
   equipment?: Equipment;
@@ -119,6 +127,7 @@ export type ThirdParty = {
   draftMessage?: string;
 };
 export const statusLabel: Record<string, string> = {
+  UNKNOWN: "Não informado",
   RUNNING: "Operando",
   STOPPED: "Parada",
   MAINTENANCE: "Em manutenção",

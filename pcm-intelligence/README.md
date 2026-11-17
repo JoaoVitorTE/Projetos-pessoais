@@ -1,10 +1,10 @@
-# PCM Intelligence — Fase 2
+# PCM Intelligence — Importações e controle (v0.3)
 
-MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Dados fictícios, sem integração SAP/SKA e sem comandos industriais.
+MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Opera com cadastros locais e arquivos exportados autorizados; mantém modo de demonstração separado. Sem conexão direta SAP/SKA e sem comandos industriais.
 
 Disponível: dashboard calculado; equipamentos; interrupções e recorrência de motivos; OS internas com histórico e exportação CSV; preventivas/lubrificação com calendário e conclusão; terceiros com checklist configurável, etapas, histórico e rascunho para revisão humana. A senha e os registros da Fase 1 são preservados nas atualizações.
 
-Assistente, alertas estatísticos avançados, importações CSV/XLSX, sensores simulados e relatórios PDF/Excel permanecem para as fases seguintes. Consulte [escopo, permissões e regras da Fase 2](docs/PHASE2.md).
+Disponível nesta versão: importação CSV/XLSX com prévia, mapeamento, repetidos, atualização, conflitos e reversão; relatório preventivo PDF/Excel; Assistente PCM estruturado; alertas de prazo; cadastros de usuários/técnicos/setores e auditoria pesquisável. Consulte [uso diário, permissões e limites](docs/IMPORTS-AND-CONTROL.md) e [regras operacionais](docs/PHASE2.md). Sincronização SAP automática, agenda avançada, ar comprimido na interface e modelos preditivos continuam futuros.
 
 ## Execução local no Windows (PowerShell)
 
@@ -26,7 +26,7 @@ npm run build
 npm run dev
 ```
 
-Abra http://localhost:5173. Login: `admin@pcm.demo`, com a senha que você definiu. O primeiro acesso exige troca da senha. A troca encerra todas as sessões do usuário. Depois de entrar novamente, a opção **Minha senha** permite outra alteração. O seed não redefine senhas existentes; os demais perfis são criados com senhas aleatórias independentes e não há recuperação de senha nesta fase.
+Abra http://localhost:5173. Login: `admin@pcm.demo`, com a senha que você definiu. O primeiro acesso exige troca da senha. A troca encerra todas as sessões do usuário. Depois de entrar novamente, a opção **Minha senha** permite outra alteração. O seed não redefine senhas existentes; os demais perfis são criados com senhas aleatórias independentes e podem ter o acesso ativado e a senha redefinida pelo administrador em Cadastros e acessos.
 
 Para parar: Ctrl+C e `docker compose stop`. O volume do PostgreSQL é preservado.
 
@@ -40,7 +40,7 @@ Configure no ambiente **production** da Vercel:
 
 - `DATABASE_URL`: conexão Neon com pool.
 - `DATABASE_URL_UNPOOLED`: conexão direta, para ferramentas Prisma.
-- `DATA_MODE=demo`.
+- `DATA_MODE=operational` para a base limpa de operação; `demo` somente em ambiente fictício.
 - `FRONTEND_ORIGIN`: URL HTTPS final, sem barra no fim.
 
 Use variáveis sensíveis para as URLs. Nunca use prefixo `VITE_` para segredos. Prepare migrations/seed de forma controlada antes da publicação. A senha temporária é fornecida separadamente; não existe senha padrão embutida no código, nos builds ou nas variáveis da Vercel.
@@ -59,7 +59,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os 50 testes cobrem fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 80 testes cobrem importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 
@@ -70,4 +70,4 @@ Os 50 testes cobrem fluxos operacionais, permissões, histórico, concorrência,
 - `backend/tests/`: integração com PostgreSQL real isolado.
 - `docs/`: arquitetura, hospedagem, Neon e evidências de validação.
 
-Dados iniciais (os cadastros e apontamentos alteram as contagens): 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas + 30 planos de lubrificação, 25 processos e 336 leituras de ar comprimido.
+O seed é opcional para demonstração, somente com `DATA_MODE=demo`. Não roda no build e não deve ser executado na base limpa. Dados do seed: 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas + 30 planos de lubrificação, 25 processos e 336 leituras de ar comprimido.

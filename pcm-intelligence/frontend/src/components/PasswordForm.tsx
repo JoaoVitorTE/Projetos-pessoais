@@ -13,7 +13,7 @@ export function PasswordForm({ required, onChanged }: Props) {
       <h2>{required ? "Defina sua senha de acesso" : "Alterar minha senha"}</h2>
       <p>
         {required
-          ? "Sua conta usa uma senha temporária. Troque-a para acessar a demonstração."
+          ? "Sua conta usa uma senha temporária. Troque-a para acessar a aplicação."
           : "A alteração encerra todas as suas sessões. Entre novamente com a nova senha."}
       </p>
       <form

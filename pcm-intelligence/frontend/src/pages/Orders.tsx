@@ -65,7 +65,7 @@ export function OrdersPage({
       const url = URL.createObjectURL(await response.blob());
       const a = document.createElement("a");
       a.href = url;
-      a.download = "ordens-locais-demo.csv";
+      a.download = "ordens-locais.csv";
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -75,10 +75,7 @@ export function OrdersPage({
   return (
     <>
       <div className="action-row">
-        <p>
-          Ordens internas de demonstração. Não representam ordens oficiais do
-          SAP.
-        </p>
+        <p>Registros locais e cópias de exportações. Sem alterações no SAP.</p>
         <div>
           <button className="secondary" onClick={download}>
             Exportar CSV
@@ -240,7 +237,11 @@ function OrderForm({
       type: initial?.type || "CORRECTIVE",
       description: initial?.description || "",
       priority: initial?.priority || 2,
-      scheduledAt: localDate(initial?.scheduledAt),
+      scheduledAt: initial
+        ? initial.scheduledAt
+          ? localDate(initial.scheduledAt)
+          : ""
+        : localDate(),
       notes: initial?.notes || "",
       sapReference: initial?.sapReference || "",
       status: initial?.status || "OPEN",
@@ -282,7 +283,9 @@ function OrderForm({
               type: form.type,
               description: form.description,
               priority: form.priority,
-              scheduledAt: new Date(form.scheduledAt).toISOString(),
+              scheduledAt: form.scheduledAt
+                ? new Date(form.scheduledAt).toISOString()
+                : null,
               notes: form.notes || null,
               sapReference: form.sapReference || null,
             };
@@ -362,7 +365,6 @@ function OrderForm({
               Programação
               <input
                 aria-label="Programação"
-                required
                 type="datetime-local"
                 value={form.scheduledAt}
                 onChange={(e) =>
@@ -473,10 +475,7 @@ function OrderDetail({ id, onClose }: { id: string; onClose: () => void }) {
             ))}
           </ol>
           {!data.data.history?.length && (
-            <p>
-              Registro fictício inicial. Ainda não houve alterações pelo
-              sistema.
-            </p>
+            <p>Registro inicial. Ainda não houve alterações pelo sistema.</p>
           )}
         </>
       )}

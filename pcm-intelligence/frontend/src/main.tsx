@@ -61,7 +61,7 @@ function App() {
             <Factory size={150} strokeWidth={0.7} />
             <span>PCM / PLATAFORMA INDUSTRIAL</span>
           </div>
-          <small>Ambiente de demonstração · Dados inteiramente fictícios</small>
+          <small>Planejamento e controle de manutenção industrial</small>
         </section>
         <section className="login-form">
           <div className="login-box">
@@ -127,7 +127,7 @@ function App() {
               <ShieldCheck size={18} /> Sessão protegida · Acesso por permissões
             </div>
             <p className="hint">
-              Use a senha temporária fornecida para a demonstração. No primeiro
+              Use a senha fornecida pelo administrador. No primeiro
               acesso, defina uma nova senha.
             </p>
           </div>

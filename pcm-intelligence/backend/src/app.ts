@@ -8,6 +8,9 @@ import {
   createOperationsRouter,
   HttpError,
 } from "./modules/operations/router.js";
+import { importsRouter } from "./modules/imports/router.js";
+import { administrationRouter } from "./modules/administration/router.js";
+import { intelligenceRouter } from "./modules/intelligence/router.js";
 import { allowLogin } from "./services/login-throttle.js";
 import { randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
@@ -41,7 +44,11 @@ export function createApp(db: PrismaClient) {
         callback(null, Boolean(origin && origins.has(origin))),
       credentials: true,
     }),
-    express.json({ limit: "32kb" }),
+    (req, res, next) => {
+      if (req.path === "/api/imports/upload")
+        express.json({ limit: "4300kb" })(req, res, next);
+      else express.json({ limit: "32kb" })(req, res, next);
+    },
     cookieParser(),
   );
   app.use((req, res, next) => {
@@ -57,8 +64,8 @@ export function createApp(db: PrismaClient) {
       await db.$queryRaw`SELECT 1`;
       res.json({
         status: "ok",
-        version: "0.2.0",
-        phase: 2,
+        version: "0.3.0",
+        phase: 3,
         database: "connected",
         dataMode: process.env.DATA_MODE,
       });
@@ -267,7 +274,7 @@ export function createApp(db: PrismaClient) {
       ]);
       res.json({
         dataMode: process.env.DATA_MODE,
-        phase: 2,
+        phase: 3,
         counts: Object.fromEntries(
           [
             "equipment",
@@ -286,19 +293,6 @@ export function createApp(db: PrismaClient) {
       next(e);
     }
   });
-  app.get(
-    "/api/admin/users",
-    auth,
-    allow(["ADMIN"]),
-    async (_req, res, next) => {
-      try {
-        const users = await db.user.findMany({ include: { role: true } });
-        res.json(users.map(publicUser));
-      } catch (e) {
-        next(e);
-      }
-    },
-  );
   app.get(
     "/api/audit",
     auth,
@@ -323,7 +317,12 @@ export function createApp(db: PrismaClient) {
       }
     },
   );
-  app.use("/api", auth, createOperationsRouter(db));
+  const modules = express.Router();
+  modules.use("/imports", importsRouter(db));
+  modules.use("/admin", administrationRouter(db));
+  modules.use(intelligenceRouter(db));
+  modules.use(createOperationsRouter(db));
+  app.use("/api", auth, modules);
   app.use((_req, res) =>
     res.status(404).json({ error: "Recurso não encontrado" }),
   );
@@ -352,6 +351,10 @@ export function createApp(db: PrismaClient) {
           error: "Entrada inválida",
           fields: error.flatten().fieldErrors,
         });
+      if ((error as { type?: string })?.type === "entity.too.large")
+        return res
+          .status(413)
+          .json({ error: "Arquivo ou requisição excedeu o limite permitido" });
       if ((error as { type?: string })?.type === "entity.parse.failed")
         return res.status(400).json({ error: "JSON inválido" });
       logger.error({ err: error }, "Falha na requisição");

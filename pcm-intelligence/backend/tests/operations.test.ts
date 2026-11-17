@@ -127,6 +127,7 @@ describe("Equipamentos e interrupções", () => {
         await call("patch", "/equipment/" + equipmentId, admin, {
           name: body.name,
           sectorId: "not-found",
+          version: 1,
           criticality: 3,
           status: "RUNNING",
         })

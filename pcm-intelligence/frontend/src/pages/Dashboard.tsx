@@ -24,6 +24,7 @@ type Data = {
     equipment: number;
     running: number;
     stopped: number;
+    unknown: number;
     interruptions: number;
     downtimeMinutes: number;
     openOrders: number;
@@ -124,10 +125,16 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
               <article className="card" key={label}>
                 <span>{label}</span>
                 <strong>{value}</strong>
-                <small>Calculado no banco de demonstração</small>
+                <small>Calculado a partir dos registros</small>
               </article>
             ))}
           </div>
+          {d.indicators.unknown > 0 && (
+            <p className="muted">
+              {d.indicators.unknown} equipamentos sem estado operacional
+              informado; não são contados como operando ou parados.
+            </p>
+          )}
           <div className="chart-grid">
             <Chart
               title="Evolução das interrupções"

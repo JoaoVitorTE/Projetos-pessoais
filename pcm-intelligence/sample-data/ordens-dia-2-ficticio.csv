@@ -1,0 +1,4 @@
+OS;Equipamento;Descrição;Tipo;Status;Prioridade;Programação
+00001234;DEMO-EQ-001;Preventiva fictícia reprogramada;PREVENTIVE;SCHEDULED;3;03/12/2026 08:00
+00005678;DEMO-EQ-002;Lubrificação fictícia;LUBRICATION;OPEN;2;02/12/2026 08:00
+00009000;DEMO-EQ-002;Inspeção fictícia;INSPECTION;OPEN;2;04/12/2026 08:00

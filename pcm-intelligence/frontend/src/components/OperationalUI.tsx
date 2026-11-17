@@ -223,11 +223,14 @@ export function TechnicianSelect({
         onChange={(e) => onChange(e.target.value)}
       >
         <option value="">{optional ? "Sem responsável" : "Selecione"}</option>
-        {lookups.technicians.map((x) => (
-          <option key={x.id} value={x.id}>
-            {x.name} · {x.specialty}
-          </option>
-        ))}
+        {lookups.technicians
+          .filter((x) => x.active || x.id === value)
+          .map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name} · {x.specialty}
+              {!x.active ? " (inativo)" : ""}
+            </option>
+          ))}
       </select>
     </label>
   );
