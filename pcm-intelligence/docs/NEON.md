@@ -19,4 +19,4 @@ As conexões reais foram salvas somente no arquivo local ignorado `backend/.env`
 
 ## Publicação com API
 
-A partir da versão com `api/[...path].ts`, a Vercel também executa a API. As variáveis reais precisam estar nos segredos de production; salvar o `.env` local não basta. Migrations e seed são executados separadamente, e sua execução não faz parte do build. A demonstração remota foi inicializada após validação em uma branch isolada; a documentação de validação registra os testes.
+A partir da versão com `api/index.ts`, a Vercel também executa a API. As variáveis reais precisam estar nos segredos de production; salvar o `.env` local não basta. Migrations e seed são executados separadamente, e sua execução não faz parte do build. A demonstração remota foi inicializada após validação em uma branch isolada; a documentação de validação registra os testes.

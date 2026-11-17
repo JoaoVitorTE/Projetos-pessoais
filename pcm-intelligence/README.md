@@ -61,7 +61,7 @@ Os testes cobrem login, autorização dos cinco perfis, auditoria, cookies, logo
 
 - `frontend/`: React, TypeScript, Vite, Lucide e CSS responsivo com temas claro/escuro.
 - `backend/src/`: Express, Zod, bcrypt, sessões, autorização, auditoria e Prisma singleton.
-- `api/[...path].ts`: entrada da função Vercel, reutilizando a API Express.
+- `api/index.ts`: entrada da função Vercel, reutilizando a API Express.
 - `backend/prisma/`: schema, migrations versionadas, dados fictícios e seed idempotente.
 - `backend/tests/`: integração com PostgreSQL real isolado.
 - `docs/`: arquitetura, hospedagem, Neon e evidências de validação.

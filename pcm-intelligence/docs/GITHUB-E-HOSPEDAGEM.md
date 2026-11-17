@@ -10,7 +10,7 @@ O aplicativo fica na pasta `pcm-intelligence` do repositório `JoaoVitorTE/Proje
 - Install Command: `npm ci`.
 - Node.js: 22.
 
-A função `api/[...path].ts` exporta a aplicação Express. Todas as chamadas do frontend usam `/api` no mesmo domínio, sem dependência de proxy de desenvolvimento. O Prisma Client é gerado antes do TypeScript. O build não aplica migrations nem seed.
+A função `api/index.ts` exporta a aplicação Express. Todas as chamadas do frontend usam `/api` no mesmo domínio, sem dependência de proxy de desenvolvimento. O Prisma Client é gerado antes do TypeScript. O build não aplica migrations nem seed.
 
 Defina em production `DATA_MODE=demo`, `FRONTEND_ORIGIN` e as conexões `DATABASE_URL` e `DATABASE_URL_UNPOOLED` como segredos sensíveis. As duas URLs são do mesmo banco; a primeira tem pool e a segunda é direta. Migrations devem ser aplicadas separadamente. Nenhum segredo recebe prefixo `VITE_`.
 
