@@ -26,7 +26,7 @@ Seed: 30 equipamentos/5 setores/12 técnicos, 200 interrupções, 100 OS, 40 pla
 4. CSV/XLSX com prévia, mapeamento, erros e reversão; adaptadores SKA/SAP independentes de formato presumido; ar comprimido simulado.
 5. Ampliar testes, demonstrar cenários, revisar segurança e documentação.
 
-Limites atuais: sem gestão de usuários/senhas pela interface, MFA, renovação/limpeza de sessões, paginação da auditoria, backup automático ou implantação industrial. Não é uma certificação para produção. Não avançar para Fase 2 enquanto a validação da Fase 1 estiver pendente.
+Limites atuais: sem gestão de usuários pela interface, MFA, renovação/limpeza de sessões, paginação da auditoria, backup automático ou implantação industrial. Não é uma certificação para produção. Não avançar para Fase 2 enquanto a validação da Fase 1 estiver pendente.
 
 ## Atualização da publicação
 

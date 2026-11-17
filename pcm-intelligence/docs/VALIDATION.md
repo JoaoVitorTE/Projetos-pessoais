@@ -22,3 +22,20 @@ Não foi realizada inspeção visual automatizada em navegador, teste de carga o
 - Documentação: docs/ARCHITECTURE.md, docs/VALIDATION.md, analytics/README.md, sample-data/README.md.
 
 backend/.env foi criado somente no ambiente local, com senha aleatória de demonstração, e está ignorado pelo Git. Nenhuma senha pessoal ou dado industrial real foi utilizado. A senha do ambiente pode ser consultada localmente nesse arquivo; não foi publicada nos logs.
+
+## Atualização de 17/11/2026 — publicação funcional
+
+A versão de código `7ea1f7c4e7a66877c095dec0f950612d6fd13336` foi publicada em production na Vercel e testada no domínio `https://projetos-pessoais-pcm-intelligence.vercel.app`.
+
+- Build completo aprovado: backend, entrada da função Node e frontend.
+- 23 testes de integração aprovados em PostgreSQL local isolado, com troca obrigatória de senha, invalidação de todas as sessões e limite de login persistente.
+- Migrations e seed testados na branch Neon `pcm-validation` e aplicados ao banco principal. A tabela `_prisma_migrations` registra os checksums dos arquivos versionados; nenhum seed é executado durante builds.
+- Endpoint de saúde publicado retornou HTTP 200, `database=connected` e `dataMode=demo`.
+- Login do administrador publicado aprovado; cookies Secure, HTTP-only e SameSite Strict; respostas de sessão sem cache. A senha temporária do administrador foi preservada para a entrega.
+- Chromium real percorreu: formulário de login, exigência de senha nova, bloqueio de dados antes da troca, alteração, novo login, consulta das contagens, autorização do planejador, opção Minha senha e logout com invalidação.
+- Capturas desktop e mobile 390×844 foram inspecionadas. Sem overflow horizontal e sem erro JavaScript durante o fluxo.
+- Conta usada na verificação restaurada e sessões encerradas após o teste. Não foram usados dados industriais reais.
+
+Contagens publicadas: 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas, 30 lubrificações, 25 processos de terceiros e 336 leituras. Os módulos operacionais ainda estão indicados como futuros; esta publicação não representa a conclusão das cinco fases do projeto.
+
+A validação remota encontrou e corrigiu incompatibilidade CommonJS/ES Modules e roteamento de URLs aninhadas da API. A versão final usa `type=module` na raiz e encaminhamento explícito `/api/:path*` para a função `api/index.ts`.
