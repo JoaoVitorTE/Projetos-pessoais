@@ -2,9 +2,9 @@ import express, { type RequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import { PrismaClient, type RoleName } from "@prisma/client";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
+import { allowLogin } from "./services/login-throttle.js";
 import { randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
 import pino from "pino";
@@ -14,17 +14,36 @@ const digest = (value: string) =>
 export function createApp(db: PrismaClient) {
   const app = express();
   app.disable("x-powered-by");
-  const origin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+  const origins = new Set(
+    [
+      process.env.FRONTEND_ORIGIN,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : undefined,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+      process.env.NODE_ENV !== "production"
+        ? "http://localhost:5173"
+        : undefined,
+    ].filter((value): value is string => Boolean(value)),
+  );
+  app.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
   app.use(
     helmet(),
-    cors({ origin, credentials: true }),
+    cors({
+      origin: (origin, callback) =>
+        callback(null, Boolean(origin && origins.has(origin))),
+      credentials: true,
+    }),
     express.json({ limit: "32kb" }),
     cookieParser(),
   );
   app.use((req, res, next) => {
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
-      req.get("origin") !== origin
+      !origins.has(req.get("origin") || "")
     )
       return res.status(403).json({ error: "Origem não autorizada" });
     next();
@@ -52,6 +71,21 @@ export function createApp(db: PrismaClient) {
       });
       if (!session || session.expiresAt < new Date() || !session.user.active)
         return res.status(401).json({ error: "Sessão inválida" });
+      if (
+        session.user.mustChangePassword &&
+        ![
+          "/api/auth/me",
+          "/api/auth/logout",
+          "/api/auth/change-password",
+        ].includes(req.path)
+      ) {
+        return res
+          .status(403)
+          .json({
+            error: "Troque a senha temporária para continuar",
+            code: "PASSWORD_CHANGE_REQUIRED",
+          });
+      }
       res.locals.user = session.user;
       next();
     } catch (e) {
@@ -65,74 +99,82 @@ export function createApp(db: PrismaClient) {
         return res.status(403).json({ error: "Permissão insuficiente" });
       next();
     };
-  const publicUser = (u: {id: string; name: string; email: string; role: {name: RoleName}}) => ({
+  const publicUser = (u: {
+    id: string;
+    name: string;
+    email: string;
+    role: { name: RoleName };
+    mustChangePassword: boolean;
+  }) => ({
     id: u.id,
     name: u.name,
     email: u.email,
     role: u.role.name,
+    mustChangePassword: u.mustChangePassword,
   });
-  app.post(
-    "/api/auth/login",
-    rateLimit({
-      windowMs: 15 * 60000,
-      limit: 15,
-      standardHeaders: "draft-7",
-      legacyHeaders: false,
-    }),
-    async (req, res, next) => {
-      try {
-        const body = z
-          .object({
-            email: z.string().email().max(200),
-            password: z.string().min(1).max(128),
-          })
-          .parse(req.body);
-        const user = await db.user.findUnique({
-          where: { email: body.email.toLowerCase() },
-          include: { role: true },
-        });
-        const valid = await compare(
-          body.password,
-          user?.passwordHash ||
-            "$2b$12$9Hd2QdR7U7BQYpOw2OdCLuYebL9.PoiNUm2wFnV7QSzvRDwGOV4PC",
-        );
-        if (!user || !valid || !user.active) {
-          await db.auditLog.create({
-            data: { action: "LOGIN_FAILED", entity: "Session", metadata: {} },
+  app.post("/api/auth/login", async (req, res, next) => {
+    try {
+      const body = z
+        .object({
+          email: z.string().trim().email().max(200),
+          password: z.string().min(1).max(128),
+        })
+        .parse(req.body);
+      const email = body.email.toLowerCase();
+      if (!(await allowLogin(db, email))) {
+        return res
+          .status(429)
+          .set("Retry-After", "900")
+          .json({
+            error:
+              "Muitas tentativas. Aguarde 15 minutos para tentar novamente.",
           });
-          return res.status(401).json({ error: "Credenciais inválidas" });
-        }
-        const token = randomBytes(32).toString("hex");
-        await db.$transaction([
-          db.session.create({
-            data: {
-              id: digest(token),
-              userId: user.id,
-              expiresAt: new Date(Date.now() + 8 * 3600000),
-            },
-          }),
-          db.auditLog.create({
-            data: {
-              userId: user.id,
-              action: "LOGIN",
-              entity: "Session",
-              metadata: {},
-            },
-          }),
-        ]);
-        res.cookie("pcm_session", token, {
-          httpOnly: true,
-          sameSite: "strict",
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 8 * 3600000,
-          path: "/api",
-        });
-        res.json(publicUser(user));
-      } catch (e) {
-        next(e);
       }
-    },
-  );
+      const user = await db.user.findUnique({
+        where: { email },
+        include: { role: true },
+      });
+      const valid = await compare(
+        body.password,
+        user?.passwordHash ||
+          "$2b$12$9Hd2QdR7U7BQYpOw2OdCLuYebL9.PoiNUm2wFnV7QSzvRDwGOV4PC",
+      );
+      if (!user || !valid || !user.active) {
+        await db.auditLog.create({
+          data: { action: "LOGIN_FAILED", entity: "Session", metadata: {} },
+        });
+        return res.status(401).json({ error: "Credenciais inválidas" });
+      }
+      const token = randomBytes(32).toString("hex");
+      await db.$transaction([
+        db.session.create({
+          data: {
+            id: digest(token),
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 8 * 3600000),
+          },
+        }),
+        db.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "LOGIN",
+            entity: "Session",
+            metadata: {},
+          },
+        }),
+      ]);
+      res.cookie("pcm_session", token, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 8 * 3600000,
+        path: "/api",
+      });
+      res.json(publicUser(user));
+    } catch (e) {
+      next(e);
+    }
+  });
   app.get("/api/auth/me", auth, (_req, res) =>
     res.json(publicUser(res.locals.user)),
   );
@@ -151,6 +193,57 @@ export function createApp(db: PrismaClient) {
           },
         }),
       ]);
+      res.clearCookie("pcm_session", { path: "/api" });
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  });
+  app.post("/api/auth/change-password", auth, async (req, res, next) => {
+    try {
+      const body = z
+        .object({
+          currentPassword: z.string().min(1).max(128),
+          newPassword: z
+            .string()
+            .min(12)
+            .refine(
+              (value) => Buffer.byteLength(value, "utf8") <= 72,
+              "Use no máximo 72 bytes",
+            ),
+        })
+        .parse(req.body);
+      const user = res.locals.user;
+      if (!(await compare(body.currentPassword, user.passwordHash))) {
+        return res.status(401).json({ error: "Senha atual incorreta" });
+      }
+      if (await compare(body.newPassword, user.passwordHash)) {
+        return res
+          .status(400)
+          .json({ error: "A nova senha precisa ser diferente da atual" });
+      }
+      const passwordHash = await hash(body.newPassword, 12);
+      const changed = await db.$transaction(async (tx) => {
+        const result = await tx.user.updateMany({
+          where: { id: user.id, passwordHash: user.passwordHash },
+          data: { passwordHash, mustChangePassword: false },
+        });
+        if (!result.count) return false;
+        await tx.session.deleteMany({ where: { userId: user.id } });
+        await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "PASSWORD_CHANGED",
+            entity: "User",
+            metadata: {},
+          },
+        });
+        return true;
+      });
+      if (!changed)
+        return res
+          .status(409)
+          .json({ error: "A senha já foi alterada. Entre novamente." });
       res.clearCookie("pcm_session", { path: "/api" });
       res.sendStatus(204);
     } catch (e) {
@@ -239,13 +332,11 @@ export function createApp(db: PrismaClient) {
       _next: express.NextFunction,
     ) => {
       if (error instanceof z.ZodError)
-        return res
-          .status(400)
-          .json({
-            error: "Entrada inválida",
-            fields: error.flatten().fieldErrors,
-          });
-      if ((error as {type?: string})?.type === "entity.parse.failed")
+        return res.status(400).json({
+          error: "Entrada inválida",
+          fields: error.flatten().fieldErrors,
+        });
+      if ((error as { type?: string })?.type === "entity.parse.failed")
         return res.status(400).json({ error: "JSON inválido" });
       logger.error({ err: error }, "Falha na requisição");
       res

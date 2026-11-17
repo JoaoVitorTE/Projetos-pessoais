@@ -657,3 +657,24 @@ th {
     gap: 12px;
   }
 }
+
+.password-panel {
+  max-width: 520px;
+  width: 100%;
+}
+.first-password {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+}
+.success {
+  color: var(--green);
+  background: var(--soft);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}

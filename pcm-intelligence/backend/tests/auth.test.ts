@@ -20,20 +20,35 @@ beforeAll(async () => {
   if (process.env.DATA_MODE !== "demo" || !process.env.SEED_PASSWORD)
     throw new Error("Testes exigem banco demo preparado e SEED_PASSWORD");
   await db.$connect();
+  await db.loginThrottle.deleteMany();
   admin = await login("admin@pcm.demo");
   viewer = await login("viewer@pcm.demo");
 });
 afterAll(() => db.$disconnect());
 describe("Fundação com PostgreSQL real", () => {
   it.each([
-    ["admin", 200, 200], ["manager", 403, 200],
-    ["planner", 403, 403], ["technician", 403, 403], ["viewer", 403, 403]
-  ])("aplica matriz de permissões ao perfil %s", async (role, usersStatus, auditStatus) => {
-    const cookie = await login(`${role}@pcm.demo`);
-    expect((await request(app).get("/api/auth/me").set("Cookie", cookie)).body.role).toBe(String(role).toUpperCase());
-    expect((await request(app).get("/api/admin/users").set("Cookie", cookie)).status).toBe(usersStatus);
-    expect((await request(app).get("/api/audit").set("Cookie", cookie)).status).toBe(auditStatus);
-  });
+    ["admin", 200, 200],
+    ["manager", 403, 200],
+    ["planner", 403, 403],
+    ["technician", 403, 403],
+    ["viewer", 403, 403],
+  ])(
+    "aplica matriz de permissões ao perfil %s",
+    async (role, usersStatus, auditStatus) => {
+      const cookie = await login(`${role}@pcm.demo`);
+      expect(
+        (await request(app).get("/api/auth/me").set("Cookie", cookie)).body
+          .role,
+      ).toBe(String(role).toUpperCase());
+      expect(
+        (await request(app).get("/api/admin/users").set("Cookie", cookie))
+          .status,
+      ).toBe(usersStatus);
+      expect(
+        (await request(app).get("/api/audit").set("Cookie", cookie)).status,
+      ).toBe(auditStatus);
+    },
+  );
   it("verifica conexão", async () => {
     expect((await request(app).get("/api/health")).body.database).toBe(
       "connected",

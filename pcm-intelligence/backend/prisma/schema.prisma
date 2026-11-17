@@ -23,6 +23,7 @@ model User {
  name String
  email String @unique
  passwordHash String
+ mustChangePassword Boolean @default(false)
  active Boolean @default(true)
  roleId String
  role Role @relation(fields: [roleId], references: [id])
@@ -214,4 +215,10 @@ model AuditLog {
  metadata Json
  createdAt DateTime @default(now())
  @@index([createdAt])
+}
+
+model LoginThrottle {
+ id String @id
+ attempts Int @default(1)
+ windowStartedAt DateTime @default(now())
 }

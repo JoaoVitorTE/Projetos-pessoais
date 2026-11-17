@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "concurrently -k \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "npm run build -w backend && npm run build -w frontend",
+    "build": "npm run build -w backend && tsc -p api/tsconfig.json && npm run build -w frontend",
     "test": "npm run test -w backend",
     "db:generate": "npm run db:generate -w backend",
     "db:migrate": "npm run db:migrate -w backend",
@@ -16,5 +16,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

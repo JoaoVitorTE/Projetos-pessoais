@@ -14,20 +14,15 @@ import {
   RefreshCw,
 } from "lucide-react";
 import "./styles.css";
-type User = { name: string; email: string; role: string };
+import { api } from "./services/api";
+import { PasswordForm } from "./components/PasswordForm";
+type User = {
+  name: string;
+  email: string;
+  role: string;
+  mustChangePassword: boolean;
+};
 type Foundation = { dataMode: string; counts: Record<string, number> };
-async function api(path: string, options: RequestInit = {}) {
-  const r = await fetch("/api" + path, {
-    ...options,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
-  if (!r.ok) {
-    const b = await r.json().catch(() => ({}));
-    throw new Error(b.error || "Não foi possível conectar à API");
-  }
-  return r.status === 204 ? null : r.json();
-}
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [boot, setBoot] = useState(true),
@@ -36,6 +31,7 @@ function App() {
     [password, setPassword] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [info, setInfo] = useState(""),
     [dark, setDark] = useState(localStorage.getItem("theme") === "dark"),
     [tab, setTab] = useState("overview"),
     [records, setRecords] = useState<any[]>([]);
@@ -58,7 +54,7 @@ function App() {
     }
   }
   useEffect(() => {
-    if (user) void load();
+    if (user && !user.mustChangePassword) void load();
   }, [user]);
   async function openTab(t: string) {
     setTab(t);
@@ -70,6 +66,14 @@ function App() {
     } catch (e) {
       setError((e as Error).message);
     }
+  }
+  function passwordChanged() {
+    setUser(null);
+    setData(null);
+    setRecords([]);
+    setTab("overview");
+    setError("");
+    setInfo("Senha alterada. Entre com a nova senha.");
   }
   if (boot)
     return <div className="loading">Conectando ao PCM Intelligence…</div>;
@@ -102,6 +106,11 @@ function App() {
             <span className="badge">FASE 01 · FUNDAÇÃO</span>
             <h2>Bem-vindo ao PCM</h2>
             <p>Acesse seu ambiente de manutenção.</p>
+            {info && (
+              <p role="status" className="success">
+                {info}
+              </p>
+            )}
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -156,11 +165,39 @@ function App() {
               <ShieldCheck size={18} /> Sessão protegida · Acesso por permissões
             </div>
             <p className="hint">
-              Use a senha definida em SEED_PASSWORD durante a instalação.
-              Nenhuma senha padrão está embutida.
+              Use a senha temporária fornecida para a demonstração. No primeiro
+              acesso, defina uma nova senha.
             </p>
           </div>
         </section>
+      </main>
+    );
+  if (user.mustChangePassword)
+    return (
+      <main className="first-password">
+        <div className="brand">
+          <Activity /> PCM <b>INTELLIGENCE</b>
+        </div>
+        <PasswordForm required onChanged={passwordChanged} />
+        <button
+          className="secondary"
+          onClick={async () => {
+            try {
+              await api("/auth/logout", { method: "POST" });
+              setUser(null);
+              setError("");
+            } catch (e) {
+              setError((e as Error).message);
+            }
+          }}
+        >
+          Sair
+        </button>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
       </main>
     );
   const labels: Record<string, string> = {
@@ -185,7 +222,7 @@ function App() {
             <Factory size={21} />
           </span>
           <div>
-            Unidade demonstrativa<small>Ambiente local / fictício</small>
+            Unidade demonstrativa<small>Dados fictícios</small>
           </div>
         </div>
         <p className="nav-label">WORKSPACE</p>
@@ -214,6 +251,13 @@ function App() {
             Auditoria
           </button>
         )}
+        <button
+          className={tab === "security" ? "nav active" : "nav"}
+          onClick={() => openTab("security")}
+        >
+          <LockKeyhole size={18} />
+          Minha senha
+        </button>
         <p className="nav-label">PRÓXIMAS ETAPAS</p>
         {[
           "Dashboard operacional",
@@ -280,7 +324,9 @@ function App() {
                   ? "Uma base sólida para evoluir."
                   : tab === "users"
                     ? "Usuários e permissões"
-                    : "Histórico de acesso"}
+                    : tab === "security"
+                      ? "Segurança da conta"
+                      : "Histórico de acesso"}
               </h1>
               <p>
                 {tab === "overview"
@@ -301,7 +347,9 @@ function App() {
               {error}
             </p>
           )}
-          {tab === "overview" ? (
+          {tab === "security" ? (
+            <PasswordForm required={false} onChanged={passwordChanged} />
+          ) : tab === "overview" ? (
             <>
               <div className="notice">
                 <ShieldCheck size={22} />
@@ -312,7 +360,7 @@ function App() {
                     equipamentos industriais.
                   </p>
                 </div>
-                <span className="badge">DADOS LOCAIS</span>
+                <span className="badge">DADOS FICTÍCIOS</span>
               </div>
               <section className="section-title">
                 <h2>Base de demonstração</h2>

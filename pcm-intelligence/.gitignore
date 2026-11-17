@@ -3,6 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.test.example
 *.log
 coverage/
 *.tsbuildinfo
@@ -12,3 +13,5 @@ coverage/
 # Configuração local de agentes e vinculação Neon
 .codex/
 .neon
+
+.vercel/

@@ -1,51 +1,23 @@
-# Enviar ao GitHub e hospedar
+# GitHub e hospedagem
 
-## Subir pelo navegador
+O aplicativo fica na pasta `pcm-intelligence` do repositório `JoaoVitorTE/Projetos-pessoais`. Nenhum segredo deve ser versionado. `.env`, configurações de agente, `.vercel`, dependências e builds estão ignorados.
 
-1. Extraia o ZIP. Nunca envie o arquivo ZIP como substituto dos arquivos do projeto.
-2. Crie um repositório no GitHub; comece com visibilidade privada.
-3. Abra o repositório, escolha Add file → Upload files e arraste o conteúdo da pasta pcm-intelligence, preservando as subpastas. O package.json da raiz deve aparecer na raiz do repositório.
-4. Confirme o envio em Commit changes. Confira que nenhum arquivo .env, node_modules ou dist foi incluído. O .env.example é apenas um modelo local e pode ser versionado.
+## Vercel
 
-Pelo Git, em um computador com Git instalado, dentro da pasta extraída:
-
-```powershell
-git init
-git add .
-git commit -m "Implementa fundação do PCM Intelligence"
-git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/pcm-intelligence.git
-git push -u origin main
-```
-
-Substitua SEU-USUARIO e crie antes um repositório vazio no GitHub. Não existem credenciais do GitHub no projeto. Nunca adicione backend/.env ao Git.
-
-## Vercel: limites desta versão
-
-A Vercel pode servir o build estático do frontend React. Isso, sozinho, não disponibiliza o sistema: o proxy /api no vite.config.ts existe apenas no desenvolvimento. A API atual é um processo Express persistente com PostgreSQL, e não foi adaptada para funções Vercel. O Docker Compose não roda na Vercel.
-
-Não importe este repositório esperando que login e banco funcionem automaticamente. Sem API e banco implantados, a interface pode carregar, mas o login não funcionará.
-
-Para uma implantação completa, será necessário:
-
-- Banco PostgreSQL hospedado, migrations aplicadas e seed fictício executado uma vez.
-- Hospedagem da API Node com HTTPS, conexão com banco, gestão de variáveis e adaptação do endereço de escuta ao provedor (o servidor atual escuta em 127.0.0.1).
-- Frontend na Vercel com encaminhamento /api para a API hospedada, preservando cookies e cabeçalhos.
-- FRONTEND_ORIGIN com a URL HTTPS final, NODE_ENV=production e DATA_MODE=demo no backend. DATABASE_URL e demais segredos somente no provedor da API.
-- Teste completo de login/logout, cookies, permissões, proxy e conexão com banco após a implantação.
-
-O pacote contém vercel.json para publicar somente o frontend. Contas, limites gratuitos e eventual cobrança dependem dos provedores; nenhuma hospedagem foi criada ou contratada.
-
-Os dados incluídos são fictícios. Para apresentação, use credenciais próprias da demonstração. Não use nome, logotipo, dados ou credenciais reais de uma empresa sem autorização. Este pacote não contém dados reais nem integrações com SAP ou SKA.
-
-
-## Configuração da Vercel para o frontend
-
-- Root Directory: `pcm-intelligence` (pasta dentro do repositório Projetos-pessoais).
-- Build Command: `npm run build:frontend`.
+- Root Directory: `pcm-intelligence`.
+- Build Command: `npm run build`.
 - Output Directory: `frontend/dist`.
 - Install Command: `npm ci`.
+- Node.js: 22.
 
-O vercel.json nessa pasta define esses comandos. Se houver overrides antigos no painel, atualize-os ou desative-os para usar o arquivo. Execute Redeploy após receber a correção; se houver client Prisma antigo em cache, desmarque a reutilização do cache.
+A função `api/[...path].ts` exporta a aplicação Express. Todas as chamadas do frontend usam `/api` no mesmo domínio, sem dependência de proxy de desenvolvimento. O Prisma Client é gerado antes do TypeScript. O build não aplica migrations nem seed.
 
-O build completo local continua sendo `npm run build`: ele gera o Prisma Client antes de compilar o backend. A geração não aplica migrations, não executa seed e não exige conexão com banco. Não coloque credenciais do banco nas variáveis do frontend. A publicação estática só permite carregar a interface; login e consultas precisam da API implantada e do encaminhamento /api descritos acima.
+Defina em production `DATA_MODE=demo`, `FRONTEND_ORIGIN` e as conexões `DATABASE_URL` e `DATABASE_URL_UNPOOLED` como segredos sensíveis. As duas URLs são do mesmo banco; a primeira tem pool e a segunda é direta. Migrations devem ser aplicadas separadamente. Nenhum segredo recebe prefixo `VITE_`.
+
+Os cookies são HTTP-only, SameSite Strict e Secure em produção. As origens aceitas são a URL configurada e os domínios exatos fornecidos pela Vercel nas variáveis de sistema; não se confia no cabeçalho Host enviado pelo cliente.
+
+O login exige troca da senha temporária antes de consultar dados. A troca encerra todas as sessões. Reimplantar ou reexecutar o seed não redefine a senha já alterada. O limite de login usa PostgreSQL, não a memória da função.
+
+A configuração de Deployment Protection da Vercel é independente do login PCM. Quando a plataforma exigir autenticação, o proprietário deverá autorizar o acesso à publicação. Não altere proteções de outros projetos.
+
+A Fase 1 é uma demonstração, sem integrações industriais ou serviços pagos obrigatórios. Limites gratuitos e eventual cobrança dependem das contas e dos provedores. Os módulos operacionais permanecem sinalizados como futuros.

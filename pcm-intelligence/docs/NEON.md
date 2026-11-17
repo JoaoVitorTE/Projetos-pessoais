@@ -16,3 +16,7 @@ A Vercel atual serve somente o frontend. Salvar as conexões neste ambiente não
 ## Verificação desta configuração
 
 As conexões reais foram salvas somente no arquivo local ignorado `backend/.env`. O build completo passou e o banco respondeu `SELECT 1` pela integração Neon. A conexão PostgreSQL direta a partir deste ambiente falhou com "Can't reach database server" na porta 5432, tanto com pool quanto sem pool. Portanto, a conectividade Prisma neste ambiente ainda não está validada; ela precisa ser testada a partir da hospedagem da API com acesso de rede ao Neon. Não foram aplicadas migrations nem executado seed no banco remoto.
+
+## Publicação com API
+
+A partir da versão com `api/[...path].ts`, a Vercel também executa a API. As variáveis reais precisam estar nos segredos de production; salvar o `.env` local não basta. Migrations e seed são executados separadamente, e sua execução não faz parte do build. A demonstração remota foi inicializada após validação em uma branch isolada; a documentação de validação registra os testes.

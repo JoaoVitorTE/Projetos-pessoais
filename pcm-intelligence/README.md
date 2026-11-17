@@ -1,19 +1,16 @@
-# PCM Intelligence
+# PCM Intelligence — Fase 1
 
-Plataforma local de demonstração para planejamento e controle de manutenção industrial. **Fase 1 implementada; validação e limitações em docs/VALIDATION.md.** Nenhuma integração SKA/SAP, envio externo de dados, comando industrial ou API paga.
+Fundação funcional de uma plataforma de manutenção industrial, com dados fictícios, autenticação e cinco perfis. Não possui integração com SAP/SKA nem envia comandos industriais. Dashboard operacional, CRUD de OS, calendário, terceiros, assistente, análises e importação continuam nas próximas fases.
 
-## Windows — execução exata (PowerShell)
+## Execução local no Windows (PowerShell)
 
-Pré-requisitos: Node.js 22 LTS ou 24 LTS, Docker Desktop com Linux containers e Docker Compose. Abra o Docker Desktop e aguarde iniciar.
+Pré-requisitos: Node.js 22 LTS, Docker Desktop com Linux containers e Git. No repositório, entre em `pcm-intelligence`.
 
 ```powershell
-cd C:\caminho\pcm-intelligence
 Copy-Item backend\.env.example backend\.env
 ```
 
-Para PostgreSQL local, mantenha `DATABASE_URL` e `DATABASE_URL_UNPOOLED` com o mesmo endereço do Compose. Para Neon, use o endereço com pool em `DATABASE_URL` e o direto em `DATABASE_URL_UNPOOLED`.
-
-Edite `backend\.env` e preencha `SEED_PASSWORD` com uma senha local de pelo menos 12 caracteres. Não compartilhe esse arquivo. As credenciais do PostgreSQL no exemplo são exclusivamente para desenvolvimento local; se alterar `POSTGRES_PASSWORD`, ajuste também `DATABASE_URL`.
+Edite `backend\.env`: para Compose, mantenha as duas URLs locais do exemplo; preencha `SEED_PASSWORD` com uma senha de 12 caracteres ou mais (até 72 bytes). Nunca envie o arquivo ao GitHub.
 
 ```powershell
 npm ci
@@ -22,33 +19,51 @@ npm run db:generate
 npm run db:migrate
 npm run db:seed
 npm run build
-npm test
 npm run dev
 ```
 
-Abra **http://localhost:5173**. API: http://localhost:3001/api/health. Login: `admin@pcm.demo` com a senha configurada. Outros perfis: `manager@pcm.demo`, `planner@pcm.demo`, `technician@pcm.demo` e `viewer@pcm.demo`, usando a mesma senha inicial da demonstração. O seed não altera usuários ou registros existentes; mudar SEED_PASSWORD não redefine senhas. Não há recuperação de senha nesta fase.
+Abra http://localhost:5173. Login: `admin@pcm.demo`, com a senha que você definiu. O primeiro acesso exige troca da senha. A troca encerra todas as sessões do usuário. Depois de entrar novamente, a opção **Minha senha** permite outra alteração. O seed não redefine senhas existentes; os demais perfis são criados com senhas aleatórias independentes e não há recuperação de senha nesta fase.
 
-Para encerrar, Ctrl+C no terminal; `docker compose stop` pausa o banco preservando dados. Para reiniciar: `docker compose up -d --wait` e `npm run dev`. As portas 5432, 3001 e 5173 precisam estar disponíveis. O navegador deve usar localhost para coincidir com FRONTEND_ORIGIN. Não use o comando de desenvolvimento para exposição pública.
+Para parar: Ctrl+C e `docker compose stop`. O volume do PostgreSQL é preservado.
 
-## Estrutura e escopo
+## Vercel + Neon
 
-- `frontend/`: React + TypeScript + Vite, CSS responsivo, temas claro/escuro, login e contagens da fundação; consulta usuários e auditoria conforme perfil.
-- `backend/`: Express + TypeScript, Prisma/PostgreSQL, validação Zod, bcrypt custo 12, sessões opacas de 8 horas (somente hash no banco), cookie HTTP-only, limite de login, Helmet, verificação de Origin e logs Pino.
-- `backend/prisma/`: modelo, migration SQL versionada e seed idempotente com IDs estáveis. Sem exclusão de dados no seed.
-- `backend/tests/`: testes de integração usando o PostgreSQL de demonstração. Nunca apontar para banco real. Os testes geram sessões e auditoria.
-- `docs/`: arquitetura, permissões, validação e próximos passos.
-- `analytics/`, `sample-data/`: reservados; nenhum importador ou análise habilitado ainda.
+A publicação agora inclui a interface e uma função Node que serve `/api/*` no mesmo domínio. As sessões e os limites de login ficam no PostgreSQL e persistem entre instâncias.
 
-A interface exibe contagens reais do banco fictício, **não indicadores operacionais de dashboard**. OEE, MTTR, MTBF, CRUD de OS, calendário, terceiros, alertas, assistente, relatórios e importadores são funcionalidades futuras. Não há botões operacionais decorativos.
+Na Vercel: Root Directory `pcm-intelligence`, Build Command `npm run build`, Output Directory `frontend/dist`, Install Command `npm ci`, Node 22. `vercel.json` configura a função e o build. O build nunca aplica migrations, não executa seed e não redefine senhas.
 
-Comandos: `npm run build` verifica TypeScript e gera os builds; `npm test` roda integração; `npm run db:migrate` aplica migrations; `npm run db:seed` carrega a demonstração. Não execute seed/testes sobre dados reais. `DATA_MODE` aceita apenas `demo` nesta versão.
+Configure no ambiente **production** da Vercel:
 
-A API de produção pode ser iniciada com `npm run start -w backend` depois do build, mas uma implantação exige HTTPS, reverse proxy, frontend servido no mesmo domínio, backup, revisão de segurança e gestão de segredos. Nenhuma implantação de produção foi realizada.
+- `DATABASE_URL`: conexão Neon com pool.
+- `DATABASE_URL_UNPOOLED`: conexão direta, para ferramentas Prisma.
+- `DATA_MODE=demo`.
+- `FRONTEND_ORIGIN`: URL HTTPS final, sem barra no fim.
 
-## Build na Vercel
+Use variáveis sensíveis para as URLs. Nunca use prefixo `VITE_` para segredos. Prepare migrations/seed de forma controlada antes da publicação. A senha temporária é fornecida separadamente; não existe senha padrão embutida no código, nos builds ou nas variáveis da Vercel.
 
-Para publicar a interface, use Root Directory `pcm-intelligence`; o `vercel.json` configura `npm run build:frontend` e saída `frontend/dist`. API e PostgreSQL precisam de hospedagem própria: consulte [GitHub e hospedagem](docs/GITHUB-E-HOSPEDAGEM.md). O build completo gera automaticamente o Prisma Client antes do TypeScript.
+## Testes com banco separado
 
-## Conexão Neon
+Os testes se recusam a rodar se o banco não terminar em `_test`. Não os execute contra o Neon principal.
 
-O backend aceita `DATABASE_URL` para tráfego da aplicação e `DATABASE_URL_UNPOOLED` para migrations Prisma. Os valores reais ficam somente em `backend/.env` ou nos segredos da hospedagem da API. Nunca use prefixo `VITE_` nem envie esses valores ao GitHub. Veja [configuração Neon](docs/NEON.md).
+```powershell
+docker exec pcm-intelligence-postgres-1 createdb -U pcm pcm_release_test
+Copy-Item backend\.env.test.example backend\.env.test
+node --env-file=backend/.env.test node_modules/prisma/build/index.js migrate deploy --schema backend/prisma/schema.prisma
+node --env-file=backend/.env.test --import tsx backend/prisma/seed.ts
+npm test
+```
+
+Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
+
+Os testes cobrem login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+
+## Estrutura
+
+- `frontend/`: React, TypeScript, Vite, Lucide e CSS responsivo com temas claro/escuro.
+- `backend/src/`: Express, Zod, bcrypt, sessões, autorização, auditoria e Prisma singleton.
+- `api/[...path].ts`: entrada da função Vercel, reutilizando a API Express.
+- `backend/prisma/`: schema, migrations versionadas, dados fictícios e seed idempotente.
+- `backend/tests/`: integração com PostgreSQL real isolado.
+- `docs/`: arquitetura, hospedagem, Neon e evidências de validação.
+
+Dados: 30 equipamentos, 5 setores, 12 técnicos, 200 interrupções, 100 OS, 40 preventivas + 30 planos de lubrificação, 25 processos e 336 leituras de ar comprimido.
