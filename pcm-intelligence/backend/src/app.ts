@@ -1,3 +1,4 @@
+import { experienceRouter } from "./modules/experience/router.js";
 import { schedulingRouter } from "./modules/scheduling/router.js";
 import express, { type RequestHandler } from "express";
 import cookieParser from "cookie-parser";
@@ -25,6 +26,10 @@ export function createApp(db: PrismaClient) {
   const origins = new Set(
     [
       process.env.FRONTEND_ORIGIN,
+      ...(process.env.ADDITIONAL_FRONTEND_ORIGINS || "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => /^https?:\/\//.test(v)),
       process.env.VERCEL_PROJECT_PRODUCTION_URL
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : undefined,
@@ -65,7 +70,7 @@ export function createApp(db: PrismaClient) {
       await db.$queryRaw`SELECT 1`;
       res.json({
         status: "ok",
-        version: "0.4.0",
+        version: "0.5.0",
         phase: 3,
         database: "connected",
         dataMode: process.env.DATA_MODE,
@@ -117,6 +122,8 @@ export function createApp(db: PrismaClient) {
     email: string;
     role: { name: RoleName };
     mustChangePassword: boolean;
+    onboardingVersion: number;
+    onboardingCompletedAt: Date | null;
     technicianId: string | null;
   }) => ({
     id: u.id,
@@ -125,6 +132,8 @@ export function createApp(db: PrismaClient) {
     role: u.role.name,
     mustChangePassword: u.mustChangePassword,
     technicianId: u.technicianId,
+    onboardingVersion: u.onboardingVersion,
+    onboardingCompletedAt: u.onboardingCompletedAt,
   });
   app.post("/api/auth/login", async (req, res, next) => {
     try {
@@ -319,6 +328,7 @@ export function createApp(db: PrismaClient) {
     },
   );
   const modules = express.Router();
+  modules.use(experienceRouter(db));
   modules.use("/scheduling", schedulingRouter(db));
   modules.use("/imports", importsRouter(db));
   modules.use("/admin", administrationRouter(db));

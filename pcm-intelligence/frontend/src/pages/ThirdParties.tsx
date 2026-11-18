@@ -19,16 +19,20 @@ import {
 export function ThirdPartiesPage({
   user,
   search,
+  initialRecordId = "",
+  initialOverdue = false,
 }: {
   user: User;
   search: string;
+  initialRecordId?: string;
+  initialOverdue?: boolean;
 }) {
   const [status, setStatus] = useState(""),
     [provider, setProvider] = useState(""),
-    [overdue, setOverdue] = useState(false),
+    [overdue, setOverdue] = useState(initialOverdue),
     [page, setPage] = useState(1),
     [edit, setEdit] = useState<ThirdParty | null | undefined>(),
-    [detail, setDetail] = useState(""),
+    [detail, setDetail] = useState(initialRecordId),
     [config, setConfig] = useState(false),
     [notice, setNotice] = useState("");
   useEffect(() => setPage(1), [search]);

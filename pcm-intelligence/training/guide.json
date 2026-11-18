@@ -1,0 +1,361 @@
+{
+  "version": "0.5",
+  "onboardingVersion": 1,
+  "updatedAt": "18/11/2026",
+  "title": "Manual de uso e treinamento",
+  "subtitle": "Do primeiro acesso à rotina de planejamento e manutenção",
+  "publicUrl": "https://pcm-intelligence.vercel.app",
+  "pdfUrl": "/docs/manual-pcm-intelligence.pdf",
+  "roles": [
+    {
+      "name": "Administrador",
+      "use": "Configura a operação, cria usuários, define perfis e gerencia todas as rotinas.",
+      "limit": "Compartilha senhas temporárias e mantém os acessos sob sua responsabilidade."
+    },
+    {
+      "name": "Gestor",
+      "use": "Acompanha indicadores, planeja atividades e valida processos de terceiros.",
+      "limit": "Criação e redefinição de contas ficam com o administrador."
+    },
+    {
+      "name": "Planejador PCM",
+      "use": "Organiza cadastros operacionais, OS, planos, importações e agenda.",
+      "limit": "Validações finais e valores de terceiros seguem as permissões do perfil."
+    },
+    {
+      "name": "Técnico",
+      "use": "Consulta a operação e registra início e conclusão das atividades atribuídas a ele.",
+      "limit": "Não cria usuários nem reorganiza a programação da equipe."
+    },
+    {
+      "name": "Visualizador",
+      "use": "Consulta os indicadores e registros liberados para acompanhamento.",
+      "limit": "Não altera cadastros, programação ou apontamentos."
+    }
+  ],
+  "onboarding": [
+    {
+      "title": "Bem-vindo ao PCM Intelligence",
+      "text": "Sua rotina de manutenção começa no Início: alertas, programação e atalhos para as áreas do sistema.",
+      "icon": "home",
+      "points": [
+        "Clique nos cartões ou ícones para abrir uma área.",
+        "Os números vêm dos registros cadastrados ou importados.",
+        "Sem registros, o sistema mostra zero e orienta os primeiros passos."
+      ],
+      "module": "home"
+    },
+    {
+      "title": "Encontre tudo por seções",
+      "text": "O cabeçalho reúne Visão geral, Operação, Gestão e Suporte. O menu hambúrguer abre a navegação completa, inclusive no celular.",
+      "icon": "navigation",
+      "points": [
+        "Use Início para ver o que precisa de atenção.",
+        "Use o Dashboard para explorar indicadores e gráficos.",
+        "Sua conta e a troca de senha ficam no menu do seu perfil."
+      ],
+      "module": "dashboard"
+    },
+    {
+      "title": "Entenda cadastros e acessos",
+      "text": "Usuário é quem acessa a plataforma. Técnico é quem executa atividades. Um técnico pode ter uma conta vinculada para fazer seus apontamentos.",
+      "icon": "users",
+      "points": [
+        "Setores organizam os equipamentos.",
+        "Técnicos recebem as atividades da agenda.",
+        "A criação de contas e os perfis são gerenciados pelo administrador."
+      ],
+      "module": "administration"
+    },
+    {
+      "title": "Planeje antes de reservar",
+      "text": "Cadastre ou importe uma OS ou plano. Configure as jornadas e registre as indisponibilidades dos técnicos antes de reservar horários.",
+      "icon": "calendar",
+      "points": [
+        "Datas de vencimento não reservam horários automaticamente.",
+        "Verifique disponibilidade, dependências e qualificação antes de confirmar.",
+        "Uma sugestão só vira reserva depois da revisão humana."
+      ],
+      "module": "scheduling"
+    },
+    {
+      "title": "Acompanhe execução e prazos",
+      "text": "As OS, os planos e a agenda mantêm seu histórico. É possível concluir uma etapa e manter a manutenção aberta.",
+      "icon": "orders",
+      "points": [
+        "Técnicos apontam somente suas atribuições.",
+        "Ao concluir uma etapa, marque a opção de encerrar a manutenção apenas quando ela realmente estiver finalizada.",
+        "Os alertas indicam atrasos e pendências registrados."
+      ],
+      "module": "orders"
+    },
+    {
+      "title": "Tenha ajuda sempre à mão",
+      "text": "A Central de ajuda reúne os procedimentos por assunto e um manual em PDF para compartilhar no treinamento da equipe.",
+      "icon": "help",
+      "points": [
+        "Você pode abrir este tutorial novamente quando quiser.",
+        "O manual explica cada rotina e as diferenças entre os perfis.",
+        "O Assistente PCM consulta os registros sem executar alterações."
+      ],
+      "module": "help"
+    }
+  ],
+  "topics": [
+    {
+      "id": "first-access",
+      "category": "Primeiros passos",
+      "title": "Primeiro acesso e senha",
+      "module": "security",
+      "summary": "Entre com o acesso fornecido pelo administrador e prepare sua conta.",
+      "steps": [
+        "Abra https://pcm-intelligence.vercel.app no computador ou no celular.",
+        "Informe o e-mail e a senha temporária recebidos do administrador.",
+        "No primeiro acesso, defina sua senha pessoal conforme os requisitos exibidos. A troca encerra as sessões anteriores.",
+        "Entre novamente com a nova senha. O tutorial de apresentação será oferecido.",
+        "Para alterar a senha depois, abra o menu da sua conta e escolha Minha senha."
+      ],
+      "tips": [
+        "Não existe cadastro público. Se você ainda não tem acesso, solicite uma conta ao administrador.",
+        "Se esquecer a senha, o administrador pode gerar outra senha temporária. Ela será mostrada apenas na confirmação da redefinição."
+      ],
+      "exercise": "Localize o menu da sua conta e a Central de ajuda. Nenhuma alteração de senha é necessária durante este exercício."
+    },
+    {
+      "id": "navigation",
+      "category": "Primeiros passos",
+      "title": "Página inicial e navegação",
+      "module": "home",
+      "summary": "Use alertas e ícones para chegar ao registro que precisa de atenção.",
+      "steps": [
+        "Após entrar, a página Início apresenta pendências, reservas abertas do dia e planos próximos do vencimento.",
+        "Clique no cartão ou ícone de uma área para abri-la. Alertas com um registro associado levam ao seu contexto ou histórico.",
+        "No computador, escolha uma seção no cabeçalho. No celular, toque no menu de três linhas para ver todas as áreas.",
+        "O botão de tema alterna entre claro e escuro. A Central de ajuda fica na seção Suporte.",
+        "O botão Atualizar consulta novamente os dados da página. Confira o horário da última atualização."
+      ],
+      "tips": [
+        "Os menus variam conforme seu perfil. Um item ausente pode indicar uma permissão diferente.",
+        "Os botões Voltar e Avançar do navegador acompanham a navegação entre as áreas."
+      ],
+      "exercise": "Abra o Dashboard pelo menu e depois volte ao Início."
+    },
+    {
+      "id": "setup",
+      "category": "Cadastros",
+      "title": "Preparar setores, equipamentos e equipe",
+      "module": "administration",
+      "summary": "Organize os cadastros antes da programação de manutenção.",
+      "steps": [
+        "Em Cadastros e acessos, cadastre os setores da operação.",
+        "Em Equipamentos, informe código, nome, setor, criticidade e situação. Use Não informado quando não houver confirmação do estado operacional.",
+        "Em Cadastros e acessos → Técnicos, cadastre nome, especialidade e situação de cada integrante.",
+        "O administrador pode criar usuários e vinculá-los aos técnicos que farão apontamentos. Usuário e técnico são cadastros diferentes.",
+        "Em Agenda inteligente → Jornadas, configure os horários de trabalho dos técnicos."
+      ],
+      "tips": [
+        "Desativar um técnico preserva seu histórico. Reservas futuras precisam ser resolvidas antes da desativação.",
+        "Quando não tiver permissão de cadastro, solicite a preparação ao responsável pelo PCM."
+      ],
+      "exercise": "Em ambiente de treinamento autorizado, identifique um setor, um equipamento e o técnico responsável por uma atividade fictícia."
+    },
+    {
+      "id": "accounts",
+      "category": "Cadastros",
+      "title": "Criar usuários e definir perfis",
+      "module": "administration",
+      "summary": "Procedimento do administrador para liberar acessos à equipe.",
+      "steps": [
+        "Abra Cadastros e acessos → Usuários e escolha Criar usuário.",
+        "Informe nome e e-mail. Escolha o perfil lendo as permissões descritas na tela.",
+        "Para o perfil Técnico, selecione um técnico existente ou cadastre o técnico no mesmo fluxo.",
+        "Revise os dados e confirme. O sistema gera uma senha temporária, exibida uma única vez.",
+        "Copie e compartilhe a senha com o destinatário por um canal autorizado. Não há envio automático de e-mail.",
+        "Para interromper um acesso, edite a conta e desative-a. Para uma senha esquecida, escolha Redefinir senha."
+      ],
+      "tips": [
+        "A troca de perfil, a desativação e a redefinição de senha encerram as sessões do usuário afetado.",
+        "O administrador não pode remover seu próprio acesso administrativo pelo formulário."
+      ],
+      "exercise": "Compare os perfis Técnico e Visualizador antes de decidir qual acesso um novo integrante precisa."
+    },
+    {
+      "id": "orders",
+      "category": "Operação diária",
+      "title": "Ordens de serviço",
+      "module": "orders",
+      "summary": "Crie e acompanhe registros locais de manutenção e suas etapas.",
+      "steps": [
+        "Abra Ordens de serviço e escolha Criar ordem.",
+        "Informe equipamento, tipo de manutenção, problema, prioridade e responsável, quando disponível.",
+        "Informe a programação se ela for conhecida. Uma data ausente permanece como Sem programação.",
+        "Use os filtros para acompanhar status e atrasos. O histórico mostra as alterações e seus responsáveis.",
+        "Para reservar uma janela de trabalho, use a Agenda inteligente. Quando há reserva ativa, mudanças de técnico, equipamento e data devem ser tratadas pela agenda.",
+        "Registre análise, programação, execução, espera e conclusão conforme as transições permitidas na tela."
+      ],
+      "tips": [
+        "O número de referência SAP, quando fornecido por uma planilha, aparece junto da identificação local. Alterações na plataforma não atualizam o SAP.",
+        "Uma OS concluída ou cancelada não pode ser reaberta nesta versão."
+      ],
+      "exercise": "Localize uma ordem e identifique equipamento, prioridade, responsável e próxima ação permitida, sem alterar um registro real."
+    },
+    {
+      "id": "schedule",
+      "category": "Operação diária",
+      "title": "Agenda, jornadas e disponibilidade",
+      "module": "scheduling",
+      "summary": "Reserve horários após conferir jornadas, conflitos e dependências.",
+      "steps": [
+        "Configure as janelas semanais em Jornadas. Para pausas, use janelas separadas. Para turno noturno, divida na meia-noite entre os dois dias.",
+        "Registre ausências e treinamentos em Indisponibilidades. Se houver conflito com reservas, reprograme ou cancele as reservas afetadas primeiro.",
+        "Escolha Reservar atividade, selecione a OS ou o plano, técnico, início e término.",
+        "Clique em Verificar disponibilidade. Resolva os impedimentos apresentados e revise eventuais orientações.",
+        "Confirme a qualificação, a disponibilidade atual e as dependências de peças ou terceiros. Registre a justificativa e confirme a reserva.",
+        "Use as visões Semanal e Mensal e os filtros por técnico, setor, equipamento e situação."
+      ],
+      "tips": [
+        "Todos os horários da agenda usam São Paulo, mesmo em aparelhos configurados em outro fuso.",
+        "Não existem jornadas presumidas. Reservas abertas para o mesmo técnico ou equipamento não podem se sobrepor.",
+        "Os horários livres são calculados pelos registros disponíveis; não representam uma medição da presença física do técnico."
+      ],
+      "exercise": "No ambiente de treinamento, confira uma janela disponível e explique por que duas reservas sobrepostas seriam recusadas."
+    },
+    {
+      "id": "execution",
+      "category": "Operação diária",
+      "title": "Iniciar, concluir etapas e reprogramar",
+      "module": "scheduling",
+      "summary": "Registre execução sem confundir uma etapa concluída com a manutenção inteira.",
+      "steps": [
+        "Abra a atividade na agenda e confira técnico, equipamento, horário e situação.",
+        "Durante a janela reservada, escolha Iniciar atividade e registre o relato. Reservas futuras ou vencidas precisam ser reprogramadas antes de iniciar.",
+        "Ao terminar, escolha Concluir etapa e descreva o que foi executado.",
+        "Marque a opção de encerrar a OS ou registrar a execução do plano somente se a manutenção correspondente estiver finalizada.",
+        "Sem essa marcação, apenas a etapa é concluída. A manutenção continua aberta para as próximas ações.",
+        "O planejador pode reprogramar ou cancelar uma reserva com justificativa. O histórico é preservado."
+      ],
+      "tips": [
+        "Ao encerrar uma OS ou um vencimento do plano, as outras reservas abertas correspondentes são canceladas com histórico; não são apresentadas como etapas executadas.",
+        "Uma atividade ainda em execução impede iniciar outra para o mesmo técnico ou equipamento."
+      ],
+      "exercise": "Explique a diferença entre Concluir etapa e Também encerrar a OS antes de fazer um apontamento."
+    },
+    {
+      "id": "plans",
+      "category": "Operação diária",
+      "title": "Preventivas e lubrificação",
+      "module": "plans",
+      "summary": "Mantenha periodicidade, próximos vencimentos e execuções registrados.",
+      "steps": [
+        "Abra Preventivas e lubrificação e cadastre o nome do plano, equipamento e técnico.",
+        "Escolha Preventiva ou Lubrificação, informe periodicidade em dias e próximo vencimento.",
+        "Acompanhe os planos na lista ou no calendário. Use os filtros de vencimento e setor quando necessário.",
+        "Reserve a execução na Agenda inteligente, sem confundir o horário reservado com o vencimento original.",
+        "Ao registrar a execução, informe o relato e a data real quando o formulário solicitar. O próximo vencimento avança pela periodicidade."
+      ],
+      "tips": [
+        "Apenas concluir uma etapa da agenda não avança o plano se a opção de registrar a execução não for marcada.",
+        "O histórico preserva o vencimento original e o técnico efetivo."
+      ],
+      "exercise": "Localize o próximo vencimento de um plano e explique onde sua execução será registrada."
+    },
+    {
+      "id": "interruptions",
+      "category": "Operação diária",
+      "title": "Interrupções e recorrência",
+      "module": "interruptions",
+      "summary": "Registre fatos observados e acompanhe repetição de ocorrências.",
+      "steps": [
+        "Em Interrupções, informe equipamento, início, tipo, motivo informado e descrição.",
+        "Informe o término quando a parada tiver encerrado. Sem término, o registro permanece em andamento.",
+        "A duração é calculada pelas datas; não digite uma causa que não foi confirmada.",
+        "Use filtros por período, setor e equipamento para acompanhar as ocorrências.",
+        "A análise de recorrência mostra motivos repetidos nos registros. Ela não é um diagnóstico mecânico ou probabilidade de falha."
+      ],
+      "tips": [
+        "MTTR, MTBF e OEE dependem de dados específicos. Ausência de base suficiente é informada pelo sistema.",
+        "O Assistente PCM pode consultar o ranking de interrupções e informar o período analisado."
+      ],
+      "exercise": "Diferencie o motivo informado no registro de uma causa mecânica ainda não investigada."
+    },
+    {
+      "id": "third-parties",
+      "category": "Gestão",
+      "title": "Acompanhar serviços de terceiros",
+      "module": "third",
+      "summary": "Mantenha etapas, pendências e documentação sob acompanhamento.",
+      "steps": [
+        "Abra Serviços de terceiros e cadastre o processo com prestador, serviço, responsável interno e OS vinculada.",
+        "Registre a execução quando ela estiver confirmada e associe as referências dos documentos recebidos.",
+        "Confira o checklist definido pelo administrador. Nenhum documento é presumido obrigatório sem configuração.",
+        "Avance as etapas com justificativa, resolvendo pendências antes das validações seguintes.",
+        "Use o histórico e o tempo em cada etapa para acompanhar processos parados. Rascunhos de mensagens devem ser revisados antes de serem enviados fora da plataforma."
+      ],
+      "tips": [
+        "Nesta versão, documentos são associados por referência; não há armazenamento de anexos nesse módulo.",
+        "A plataforma não aprova pagamentos nem envia mensagens automaticamente."
+      ],
+      "exercise": "Identifique a etapa atual de um processo e qual pendência precisa ser resolvida, sem movimentar um processo real."
+    },
+    {
+      "id": "imports",
+      "category": "Gestão",
+      "title": "Importar planilhas autorizadas",
+      "module": "imports",
+      "summary": "Revise os dados antes de aplicar arquivos CSV ou XLSX.",
+      "steps": [
+        "Em Importar planilhas, crie ou selecione uma origem e classifique o arquivo como fictício ou exportação autorizada.",
+        "Escolha o tipo de registro e mantenha a mesma identificação da base para arquivos correspondentes de dias diferentes.",
+        "Envie CSV UTF-8 ou XLSX e mapeie os cabeçalhos. Use uma chave externa estável; nome do arquivo e número da linha não identificam o registro.",
+        "Confira datas, fuso e significado dos códigos. Gere a prévia e revise novos, alterados, repetidos, inválidos e conflitos.",
+        "Digite IMPORTAR para confirmar. Se houver erros, corrija o arquivo ou autorize somente as linhas válidas.",
+        "Acompanhe o lote no histórico. Um lote pode ser retomado ou desfeito quando os registros ainda estiverem no estado esperado."
+      ],
+      "tips": [
+        "Limite por arquivo: 3 MB, 1.000 linhas de dados e 60 colunas.",
+        "Itens repetidos da mesma base não criam novas cópias. Alterações locais e reservas da agenda recebem proteção contra substituição silenciosa.",
+        "A conexão automática com SAP fica para uma etapa futura; este procedimento usa somente arquivos autorizados."
+      ],
+      "exercise": "Use um arquivo fictício no ambiente de treinamento e explique o resultado da prévia antes de confirmar."
+    },
+    {
+      "id": "reports",
+      "category": "Gestão",
+      "title": "Dashboard, relatórios e Assistente PCM",
+      "module": "reports",
+      "summary": "Consulte indicadores, exporte relatórios e encontre respostas nos registros.",
+      "steps": [
+        "No Dashboard, selecione período e filtros para acompanhar os indicadores e gráficos.",
+        "No Relatório de preventivas, confira planos ativos e OS preventivas ou de lubrificação ainda abertas.",
+        "Aplique os filtros e use Exportar PDF ou Exportar Excel. As datas ausentes permanecem sem programação.",
+        "No Assistente PCM, escolha uma pergunta sugerida ou escreva uma consulta compatível, como ordens atrasadas, planos próximos do vencimento ou programação de amanhã.",
+        "Confira o período e os dados que sustentam a resposta antes de tomar uma decisão."
+      ],
+      "tips": [
+        "O Assistente usa consultas estruturadas e não executa alterações críticas.",
+        "Sugestões de prioridade da agenda são regras explicáveis, não probabilidades de falha ou economia financeira estimada."
+      ],
+      "exercise": "Gere um relatório filtrado e identifique o período, a situação dos itens e o horário de consulta."
+    },
+    {
+      "id": "audit",
+      "category": "Suporte",
+      "title": "Histórico, auditoria e dúvidas frequentes",
+      "module": "audit",
+      "summary": "Saiba onde conferir alterações e resolver dificuldades de acesso.",
+      "steps": [
+        "Use o histórico do próprio registro para acompanhar suas movimentações.",
+        "Administradores e gestores podem pesquisar a Auditoria por período, pessoa, ação e informações do registro.",
+        "Se uma alteração for recusada por versão antiga, atualize a tela e revise o que mudou antes de tentar novamente.",
+        "Se não houver registros ou alertas, confira os filtros e o cadastro da operação. Zero não significa, por si só, falha no sistema.",
+        "Se um menu ou ação estiver ausente, confira seu perfil com o administrador.",
+        "Para consultar este material novamente, abra Suporte → Central de ajuda. No celular, o navegador pode salvar um favorito ou adicionar o site à tela inicial usando o ícone PCM."
+      ],
+      "tips": [
+        "Não compartilhe sua senha pessoal. O administrador dispõe de redefinição de senha temporária.",
+        "Uma nova URL pode pedir novo login. Use a mesma conta e senha; a mudança de endereço não cria outra conta."
+      ],
+      "exercise": "Descreva a quem você deve recorrer em caso de senha esquecida, permissão insuficiente ou reserva conflitante."
+    }
+  ]
+}

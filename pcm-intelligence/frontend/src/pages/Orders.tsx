@@ -32,17 +32,21 @@ export function OrdersPage({
   user,
   lookups,
   search,
+  initialRecordId = "",
+  initialOverdue = false,
 }: {
   user: User;
   lookups: Lookups;
   search: string;
+  initialRecordId?: string;
+  initialOverdue?: boolean;
 }) {
   const [fleet, setFleet] = useState(emptyFleet),
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
-    [overdue, setOverdue] = useState(false),
+    [overdue, setOverdue] = useState(initialOverdue),
     [edit, setEdit] = useState<Order | null | undefined>(),
-    [detail, setDetail] = useState(""),
+    [detail, setDetail] = useState(initialRecordId),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
   const qs = query({

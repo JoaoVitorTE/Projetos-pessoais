@@ -1,22 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Activity, Factory, ShieldCheck, ArrowRight } from "lucide-react";
+import {
+  CalendarClock,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  ShieldCheck,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Download,
+  KeyRound,
+} from "lucide-react";
 import "./styles.css";
+import "./experience.css";
 import { api } from "./services/api";
 import { OperationalShell } from "./components/OperationalShell";
 import { PasswordForm } from "./components/PasswordForm";
-type User = {
-  id: string;
-  technicianId: string | null;
-  name: string;
-  email: string;
-  role: string;
-  mustChangePassword: boolean;
-};
+import { Brand } from "./components/Brand";
+import type { User } from "./types/operations";
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [boot, setBoot] = useState(true),
-    [email, setEmail] = useState("admin@pcm.demo"),
+    [email, setEmail] = useState(""),
+    [visible, setVisible] = useState(false),
     [password, setPassword] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -41,33 +47,58 @@ function App() {
     return <div className="loading">Conectando ao PCM Intelligence…</div>;
   if (!user)
     return (
-      <main className="login">
+      <main className="login modern-login">
         <section className="login-story">
-          <div className="brand">
-            <Activity /> PCM <b>INTELLIGENCE</b>
-          </div>
+          <Brand light />
           <span className="eyebrow">INTELIGÊNCIA PARA A OPERAÇÃO</span>
           <h1>
-            O próximo passo
+            Clareza para planejar.
             <br />
-            da sua manutenção.
+            Controle para executar.
           </h1>
           <p>
-            Uma base conectada para planejar melhor,
-            <br />
-            reduzir retrabalho e decidir com dados.
+            Sua rotina de manutenção organizada em um só lugar, do planejamento
+            ao histórico de cada execução.
           </p>
-          <div className="factory-art">
-            <Factory size={150} strokeWidth={0.7} />
-            <span>PCM / PLATAFORMA INDUSTRIAL</span>
+          <div className="login-features">
+            {[
+              {
+                icon: CalendarClock,
+                title: "Planeje com a equipe",
+                text: "Agenda, disponibilidade e planos preventivos.",
+              },
+              {
+                icon: ClipboardCheck,
+                title: "Acompanhe cada atividade",
+                text: "Ordens, responsáveis e histórico de alterações.",
+              },
+              {
+                icon: ChartNoAxesCombined,
+                title: "Decida com dados",
+                text: "Indicadores calculados e alertas explicáveis.",
+              },
+            ].map((f) => (
+              <div key={f.title}>
+                <span>
+                  <f.icon size={21} />
+                </span>
+                <div>
+                  <b>{f.title}</b>
+                  <p>{f.text}</p>
+                </div>
+              </div>
+            ))}
           </div>
           <small>Planejamento e controle de manutenção industrial</small>
         </section>
         <section className="login-form">
           <div className="login-box">
-            <span className="badge">FASE 02 · OPERAÇÃO</span>
-            <h2>Bem-vindo ao PCM</h2>
-            <p>Acesse seu ambiente de manutenção.</p>
+            <span className="login-key">
+              <KeyRound size={21} />
+            </span>
+            <span className="section-kicker">SEU AMBIENTE DE MANUTENÇÃO</span>
+            <h2>Bem-vindo de volta.</h2>
+            <p>Entre com a conta fornecida pelo administrador.</p>
             {info && (
               <p role="status" className="success">
                 {info}
@@ -105,13 +136,23 @@ function App() {
               </label>
               <label>
                 Senha
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
+                <span className="password-input">
+                  <input
+                    type={visible ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    className="password-eye"
+                    type="button"
+                    aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
+                    onClick={() => setVisible(!visible)}
+                  >
+                    {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </span>
               </label>
               {error && (
                 <div role="alert" className="error">
@@ -127,9 +168,17 @@ function App() {
               <ShieldCheck size={18} /> Sessão protegida · Acesso por permissões
             </div>
             <p className="hint">
-              Use a senha fornecida pelo administrador. No primeiro
-              acesso, defina uma nova senha.
+              Use a senha fornecida pelo administrador. No primeiro acesso,
+              defina uma nova senha.
             </p>
+            <a
+              className="login-manual"
+              href="/docs/manual-pcm-intelligence.pdf"
+              download
+            >
+              <Download size={16} />
+              Manual de primeiro acesso e treinamento
+            </a>
           </div>
         </section>
       </main>
@@ -137,9 +186,7 @@ function App() {
   if (user.mustChangePassword)
     return (
       <main className="first-password">
-        <div className="brand">
-          <Activity /> PCM <b>INTELLIGENCE</b>
-        </div>
+        <Brand />
         <PasswordForm required onChanged={passwordChanged} />
         <button
           className="secondary"
@@ -168,6 +215,11 @@ function App() {
       dark={dark}
       onTheme={() => setDark(!dark)}
       onPasswordChanged={passwordChanged}
+      onPreferencesChanged={(preferences) =>
+        setUser((current) =>
+          current ? { ...current, ...preferences } : current,
+        )
+      }
       onLogout={async () => {
         await api("/auth/logout", { method: "POST" });
         setUser(null);

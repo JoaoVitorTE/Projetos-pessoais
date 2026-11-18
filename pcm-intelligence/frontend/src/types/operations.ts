@@ -5,6 +5,8 @@ export type User = {
   role: string;
   technicianId: string | null;
   mustChangePassword: boolean;
+  onboardingVersion: number;
+  onboardingCompletedAt: string | null;
 };
 export type Equipment = {
   version: number;

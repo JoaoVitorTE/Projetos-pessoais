@@ -7,12 +7,13 @@
   ],
   "scripts": {
     "dev": "concurrently -k \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "npm run build -w backend && tsc -p api/tsconfig.json && npm run build -w frontend",
+    "build": "npm run docs:build && npm run build -w backend && tsc -p api/tsconfig.json && npm run build -w frontend",
     "test": "npm run test -w backend",
     "db:generate": "npm run db:generate -w backend",
     "db:migrate": "npm run db:migrate -w backend",
     "db:seed": "npm run db:seed -w backend",
-    "build:frontend": "npm run build -w frontend"
+    "build:frontend": "npm run build -w frontend",
+    "docs:build": "node scripts/build-training.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -79,7 +79,16 @@ export function administrationRouter(db: PrismaClient) {
     run(async (req, res) => {
       requireRole(res, ["ADMIN"]);
       const body = userFields
-          .extend({ temporaryPassword: password.optional() })
+          .extend({
+            temporaryPassword: password.optional(),
+            newTechnician: z
+              .object({
+                name: z.string().trim().min(3).max(120),
+                specialty: z.string().trim().min(3).max(120),
+              })
+              .strict()
+              .optional(),
+          })
           .strict()
           .parse(req.body),
         temporaryPassword =
@@ -88,12 +97,30 @@ export function administrationRouter(db: PrismaClient) {
         user = actor(res);
       const row = await db.$transaction(async (tx) => {
         await adminLock(tx, user.id);
-        if (body.role === "TECHNICIAN" && !body.technicianId)
+        if (body.newTechnician && body.technicianId)
+          throw new HttpError(
+            400,
+            "Escolha cadastrar um técnico novo ou vincular um existente",
+          );
+        let technicianId = body.technicianId;
+        if (body.newTechnician) {
+          const created = await tx.technician.create({
+            data: {
+              ...body.newTechnician,
+              id: "TEC-" + randomUUID().slice(0, 8).toUpperCase(),
+              active: true,
+              isDemo: process.env.DATA_MODE === "demo",
+            },
+          });
+          technicianId = created.id;
+          await audit(tx, user, "TECHNICIAN_CREATED", "Technician", created);
+        }
+        if (body.role === "TECHNICIAN" && !technicianId)
           throw new HttpError(400, "Vincule um técnico à conta técnica");
         if (
-          body.technicianId &&
+          technicianId &&
           !(await tx.technician.findFirst({
-            where: { id: body.technicianId, active: true },
+            where: { id: technicianId!, active: true },
           }))
         )
           throw new HttpError(400, "Técnico inexistente ou inativo");
@@ -106,7 +133,7 @@ export function administrationRouter(db: PrismaClient) {
             email: body.email,
             active: body.active,
             roleId: role.id,
-            technicianId: body.technicianId,
+            technicianId,
             passwordHash,
             mustChangePassword: true,
           },

@@ -174,7 +174,16 @@ export function AssistantPage() {
     </>
   );
 }
-export function AlertsPage() {
+import type { Navigate, ModuleId } from "../types/navigation";
+export function AlertsPage({ onNavigate }: { onNavigate: Navigate }) {
+  const destinations: Record<string, { module: ModuleId; overdue?: boolean }> =
+    {
+      "late-orders": { module: "orders", overdue: true },
+      "late-plans": { module: "plans", overdue: true },
+      "stalled-services": { module: "third", overdue: true },
+      "expired-reservations": { module: "scheduling" },
+      "blocked-reservations": { module: "scheduling" },
+    };
   const data = useResource<{
     period: { asOf: string };
     items: {
@@ -201,6 +210,18 @@ export function AlertsPage() {
           {data.data.items.map((a) => (
             <section className="panel import-section" key={a.id}>
               <h2>{a.title}</h2>
+              {destinations[a.id] && (
+                <button
+                  className="secondary small"
+                  onClick={() =>
+                    onNavigate(destinations[a.id].module, {
+                      overdue: destinations[a.id].overdue,
+                    })
+                  }
+                >
+                  Ver registros
+                </button>
+              )}
               <p>
                 <strong>Evidência:</strong> {a.evidence}
               </p>

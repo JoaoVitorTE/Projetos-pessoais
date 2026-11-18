@@ -283,6 +283,19 @@ export function intelligenceRouter(db: PrismaClient) {
           recommendation:
             "Revise a execução ou reprograme o horário antes de iniciar outra atividade.",
         });
+      const blocked = await db.technicianAssignment.count({
+        where: { status: "BLOCKED", endsAt: { gte: now } },
+      });
+      if (blocked)
+        items.push({
+          id: "blocked-reservations",
+          kind: "FACT",
+          title: `${blocked} reservas estão bloqueadas`,
+          evidence:
+            "Reservas com status bloqueado e término ainda não ultrapassado.",
+          recommendation:
+            "Confira a dependência registrada antes de retomar ou reprogramar a atividade.",
+        });
       res.json({
         period: { asOf: now.toISOString() },
         items,

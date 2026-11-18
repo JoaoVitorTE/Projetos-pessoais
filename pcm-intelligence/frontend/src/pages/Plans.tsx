@@ -27,22 +27,26 @@ export function PlansPage({
   user,
   lookups,
   search,
+  initialRecordId = "",
+  initialOverdue = false,
 }: {
   user: User;
   lookups: Lookups;
   search: string;
+  initialRecordId?: string;
+  initialOverdue?: boolean;
 }) {
   const [fleet, setFleet] = useState(emptyFleet),
     [page, setPage] = useState(1),
     [type, setType] = useState(""),
-    [overdue, setOverdue] = useState(false),
+    [overdue, setOverdue] = useState(initialOverdue),
     [view, setView] = useState("list"),
     [month, setMonth] = useState(
       new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     ),
     [edit, setEdit] = useState<Plan | null | undefined>(),
     [complete, setComplete] = useState<Plan | null>(null),
-    [detail, setDetail] = useState(""),
+    [detail, setDetail] = useState(initialRecordId),
     [notice, setNotice] = useState("");
   const start = new Date(month.getFullYear(), month.getMonth(), 1),
     end = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59);

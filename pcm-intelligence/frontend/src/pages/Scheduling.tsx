@@ -45,10 +45,12 @@ export function SchedulingPage({
   user,
   lookups,
   onChanged,
+  initialRecordId = "",
 }: {
   user: User;
   lookups: Lookups;
   onChanged: () => void;
+  initialRecordId?: string;
 }) {
   const [tab, setTab] = useState("calendar"),
     [view, setView] = useState<"week" | "month">("week"),
@@ -58,7 +60,7 @@ export function SchedulingPage({
     [equipmentId, setEquipment] = useState(""),
     [status, setStatus] = useState(""),
     [choice, setChoice] = useState<BookingChoice | null>(null),
-    [detail, setDetail] = useState(""),
+    [detail, setDetail] = useState(initialRecordId),
     [duration, setDuration] = useState(60),
     [proposals, setProposals] = useState<Proposals | null>(null),
     [busy, setBusy] = useState(false),

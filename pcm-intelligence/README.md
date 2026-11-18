@@ -1,10 +1,12 @@
-# PCM Intelligence — Agenda inteligente (v0.4)
+# PCM Intelligence — Experiência e treinamento (v0.5)
 
 MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Opera com cadastros locais e arquivos exportados autorizados; mantém modo de demonstração separado. Sem conexão direta SAP/SKA e sem comandos industriais.
 
 Disponível: dashboard calculado; equipamentos; interrupções e recorrência de motivos; OS internas com histórico e exportação CSV; preventivas/lubrificação com calendário e conclusão; terceiros com checklist configurável, etapas, histórico e rascunho para revisão humana. A senha e os registros da Fase 1 são preservados nas atualizações.
 
 Disponível nesta versão: importação CSV/XLSX com prévia, mapeamento, repetidos, atualização, conflitos e reversão; relatório preventivo PDF/Excel; Assistente PCM estruturado; alertas de prazo; cadastros de usuários/técnicos/setores e auditoria pesquisável. Consulte [uso diário, permissões e limites](docs/IMPORTS-AND-CONTROL.md) e [regras operacionais](docs/PHASE2.md). Nova etapa: [Agenda inteligente](docs/SCHEDULING.md), com visões semanal/mensal, jornadas e ausências configuráveis, conflitos, execução por etapas e propostas explicáveis para revisão humana. Sincronização SAP automática, ar comprimido na interface, análises estatísticas avançadas e modelos preditivos continuam futuros.
+
+Nova experiência: página inicial com alertas e atalhos, cabeçalho suspenso por seções, menu hambúrguer, logo e ícones, cadastro guiado de usuários e tutorial persistido por conta. Consulte [experiência e treinamento](docs/EXPERIENCE.md) e o [manual em PDF](frontend/public/docs/manual-pcm-intelligence.pdf). Endereço principal: https://pcm-intelligence.vercel.app. A mesma senha de cada conta continua válida.
 
 ## Execução local no Windows (PowerShell)
 
@@ -41,7 +43,8 @@ Configure no ambiente **production** da Vercel:
 - `DATABASE_URL`: conexão Neon com pool.
 - `DATABASE_URL_UNPOOLED`: conexão direta, para ferramentas Prisma.
 - `DATA_MODE=operational` para a base limpa de operação; `demo` somente em ambiente fictício.
-- `FRONTEND_ORIGIN`: URL HTTPS final, sem barra no fim.
+- `FRONTEND_ORIGIN`: URL HTTPS final, sem barra no fim (`https://pcm-intelligence.vercel.app`).
+- `ADDITIONAL_FRONTEND_ORIGINS`: opcional; outras origens confiáveis exatas, separadas por vírgula, durante a transição de domínio.
 
 Use variáveis sensíveis para as URLs. Nunca use prefixo `VITE_` para segredos. Prepare migrations/seed de forma controlada antes da publicação. A senha temporária é fornecida separadamente; não existe senha padrão embutida no código, nos builds ou nas variáveis da Vercel.
 
@@ -59,7 +62,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os 106 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 116 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 
