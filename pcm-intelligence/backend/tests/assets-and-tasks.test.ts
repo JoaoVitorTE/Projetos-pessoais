@@ -558,6 +558,31 @@ describe("Planos mistos e operações agrupadas com importação repetível", ()
     expect(r.status).toBe(409);
     expect(r.body.error).toContain("planos ativos");
   });
+  it("mantém uma prévia limitada para listas com muitas operações sem multiplicar o conteúdo", async () => {
+    const lines = planCsv().split("\r\n"),
+      base = lines[1].split(";");
+    const csv = [
+      lines[0],
+      ...Array.from({ length: 150 }, (_, i) => {
+        const row = [...base];
+        row[9] = String(i + 1).padStart(4, "0");
+        row[10] = "Operação fictícia " + i + " " + "x".repeat(600);
+        return row.join(";");
+      }),
+    ].join("\r\n");
+    const file = await upload(source.id, csv),
+      r = await preview(file.id, mapping);
+    expect(r.status).toBe(200);
+    expect(r.body.counts.UPDATE).toBe(1);
+    expect(r.body.counts.GROUPED).toBe(149);
+    const batch = await db.importBatch.findUniqueOrThrow({
+      where: { id: file.id },
+    });
+    expect(Buffer.byteLength(JSON.stringify(batch.payload))).toBeLessThan(
+      800000,
+    );
+    expect((batch.payload as any).rows[0].data.tasks).toHaveLength(150);
+  });
 });
 describe("Importação de equipamentos com TAG e número separados", () => {
   it("atualiza o cadastro antigo sem trocar o ID, e aceita um novo registro sem número", async () => {

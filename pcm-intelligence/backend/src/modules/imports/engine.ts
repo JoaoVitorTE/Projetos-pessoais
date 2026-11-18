@@ -245,15 +245,20 @@ export async function planImport(
           const list = tasksSchema.parse(
             [...tasks.values()].sort((a, b) => a.code.localeCompare(b.code)),
           );
-          for (const row of group) {
-            row.data.tasks = list;
-            row.hash = fingerprint(
-              Object.fromEntries(
-                Object.entries(row.data).filter(
-                  ([k]) => !["sector", "criticality"].includes(k),
-                ),
+          group[0].data.tasks = list;
+          const hash = fingerprint(
+            Object.fromEntries(
+              Object.entries(group[0].data).filter(
+                ([k]) => !["sector", "criticality"].includes(k),
               ),
-            );
+            ),
+          );
+          for (const row of group) {
+            if (row !== group[0]) {
+              delete row.data.tasks;
+              row.groupedInto = group[0].rowNumber;
+            }
+            row.hash = hash;
           }
         } catch (e) {
           group.forEach((r) => (r.error = (e as Error).message));
@@ -336,9 +341,9 @@ export async function planImport(
         return {
           ...row,
           action:
-            target === "PLANS" && row.data.tasks ? "GROUPED" : "DUPLICATE",
+            target === "PLANS" && row.groupedInto ? "GROUPED" : "DUPLICATE",
           reason:
-            target === "PLANS" && row.data.tasks
+            target === "PLANS" && row.groupedInto
               ? "Tarefa agrupada no plano da linha " + dup[0].rowNumber
               : "Linha idêntica à linha " + dup[0].rowNumber,
         };

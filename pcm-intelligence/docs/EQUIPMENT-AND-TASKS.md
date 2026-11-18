@@ -34,7 +34,7 @@ Para importar a lista de tarefas junto:
 4. Se um plano SAP tiver vários itens diferentes, use Plano + Item na chave composta.
 5. Revise a prévia: os planos aparecem como novos/atualizados e as demais linhas de operações como Tarefa agrupada no plano.
 
-Dados de plano divergentes ou códigos de operação com conteúdos diferentes geram erro; não há escolha arbitrária de um deles. As tarefas são ordenadas por código, e a reimportação do mesmo conjunto não duplica nem incrementa versões sem alteração.
+Dados de plano divergentes ou códigos de operação com conteúdos diferentes geram erro; não há escolha arbitrária de um deles. Uma operação inválida bloqueia a lista inteira daquele plano, mesmo ao autorizar somente linhas válidas de outros planos. A prévia armazena cada lista consolidada uma única vez para manter o tamanho limitado em arquivos com muitas operações. As tarefas são ordenadas por código, e a reimportação do mesmo conjunto não duplica nem incrementa versões sem alteração.
 
 Quando tarefas são mapeadas e preenchidas, o conjunto do arquivo substitui a lista daquele plano após a revisão e confirmação. Arquivos sem tarefas preservam a lista já cadastrada. As diferenças aparecem legíveis na prévia; a reversão usa os registros antes/depois e é bloqueada se houver alterações posteriores. Listas independentes sem vínculo com planos e sincronização direta do SAP continuam futuras.
 
@@ -46,4 +46,4 @@ Colunas finais inteiramente vazias são ignoradas com aviso. Colunas sem título
 
 A migration `202611180007_equipment_identity_and_plan_tasks` adiciona campos e índices; não aplica seed nem redefine senhas. Aplicá-la antes de publicar. Prévias antigas de equipamentos precisam ser geradas novamente para obedecer à nova regra de TAG.
 
-Validação local: 138 testes com PostgreSQL isolado e build completo, incluindo identidade por setor, número opcional, exclusão/restauração, permissões, concorrência, preservação de histórico, chaves, tarefas agrupadas, duplicidades, reimportação e reversão. O manual e a Central de ajuda foram atualizados a partir de `training/guide.json`.
+Validação local: 139 testes com PostgreSQL isolado e build completo, incluindo identidade por setor, número opcional, exclusão/restauração, permissões, concorrência, preservação de histórico, chaves, tarefas agrupadas, duplicidades, reimportação e reversão. O manual e a Central de ajuda foram atualizados a partir de `training/guide.json`.

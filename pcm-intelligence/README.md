@@ -64,7 +64,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os 138 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 139 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 

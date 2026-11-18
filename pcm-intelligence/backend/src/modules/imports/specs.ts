@@ -247,6 +247,7 @@ function parseDate(value: string, o: ImportOptions) {
   return fromZonedTime(text, o.timezone).toISOString();
 }
 export type Normalized = {
+  groupedInto?: number;
   rowNumber: number;
   externalKey: string;
   data: Record<string, any>;
