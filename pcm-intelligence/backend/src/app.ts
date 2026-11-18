@@ -1,3 +1,4 @@
+import { schedulingRouter } from "./modules/scheduling/router.js";
 import express, { type RequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -64,7 +65,7 @@ export function createApp(db: PrismaClient) {
       await db.$queryRaw`SELECT 1`;
       res.json({
         status: "ok",
-        version: "0.3.0",
+        version: "0.4.0",
         phase: 3,
         database: "connected",
         dataMode: process.env.DATA_MODE,
@@ -318,6 +319,7 @@ export function createApp(db: PrismaClient) {
     },
   );
   const modules = express.Router();
+  modules.use("/scheduling", schedulingRouter(db));
   modules.use("/imports", importsRouter(db));
   modules.use("/admin", administrationRouter(db));
   modules.use(intelligenceRouter(db));

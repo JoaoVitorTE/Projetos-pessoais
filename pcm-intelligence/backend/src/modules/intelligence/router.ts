@@ -267,6 +267,22 @@ export function intelligenceRouter(db: PrismaClient) {
             "Etapa atual sem movimentação registrada há mais de sete dias.",
           recommendation: "Revise pendências com o responsável.",
         });
+      const expired = await db.technicianAssignment.count({
+        where: {
+          status: { in: ["SCHEDULED", "IN_PROGRESS", "BLOCKED"] },
+          endsAt: { lt: now },
+        },
+      });
+      if (expired)
+        items.push({
+          id: "expired-reservations",
+          kind: "FACT",
+          title: `${expired} reservas ultrapassaram o término previsto`,
+          evidence:
+            "Reservas ainda abertas cujo término reservado é anterior à consulta.",
+          recommendation:
+            "Revise a execução ou reprograme o horário antes de iniciar outra atividade.",
+        });
       res.json({
         period: { asOf: now.toISOString() },
         items,
@@ -355,23 +371,39 @@ export function intelligenceRouter(db: PrismaClient) {
         from = new Date(local + "T00:00:00-03:00");
         from = new Date(from.getTime() + 86400000);
         to = new Date(from.getTime() + 86400000);
-        items = await db.maintenanceOrder.findMany({
+        const reservations = await db.technicianAssignment.findMany({
           where: {
-            scheduledAt: { gte: from, lt: to },
-            status: { notIn: ["COMPLETED", "CANCELLED"] },
+            startsAt: { lt: to },
+            endsAt: { gt: from },
+            status: { in: ["SCHEDULED", "IN_PROGRESS", "BLOCKED"] },
           },
-          select: {
-            id: true,
-            equipmentId: true,
-            description: true,
-            scheduledAt: true,
-            status: true,
+          include: {
+            technician: { select: { name: true } },
+            order: {
+              select: {
+                id: true,
+                sapReference: true,
+                equipmentId: true,
+                type: true,
+              },
+            },
+            plan: { select: { id: true, equipmentId: true, type: true } },
           },
-          orderBy: { scheduledAt: "asc" },
+          orderBy: { startsAt: "asc" },
           take: 20,
         });
+        items = reservations.map((a) => ({
+          id: a.id,
+          activity: a.order?.sapReference || a.orderId || a.planId,
+          equipmentId: a.order?.equipmentId || a.plan?.equipmentId,
+          technician: a.technician.name,
+          startsAt: a.startsAt,
+          endsAt: a.endsAt,
+          status: a.status,
+          type: a.order?.type || a.plan?.type,
+        }));
         explanation =
-          "Ordens não encerradas programadas para amanhã no fuso America/Sao_Paulo.";
+          "Reservas confirmadas da agenda que passam por amanhã em São Paulo. Datas de OS sem reserva não ocupam horários na agenda.";
       } else if (/ord|atrasad|vencid/.test(q)) {
         intent = "LATE_ORDERS";
         from = new Date(0);

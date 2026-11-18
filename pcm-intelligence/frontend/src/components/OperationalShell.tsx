@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   CalendarDays,
+  CalendarClock,
   Handshake,
   Timer,
   Search,
@@ -29,6 +30,7 @@ const menu = [
   { id: "equipment", label: "Equipamentos", icon: Factory },
   { id: "interruptions", label: "Interrupções", icon: Timer },
   { id: "orders", label: "Ordens de serviço", icon: ClipboardList },
+  { id: "scheduling", label: "Agenda inteligente", icon: CalendarClock },
   { id: "plans", label: "Preventivas e lubrificação", icon: CalendarDays },
   { id: "third", label: "Serviços de terceiros", icon: Handshake },
   { id: "imports", label: "Importações SAP / planilhas", icon: FileInput },
@@ -42,6 +44,8 @@ const descriptions: Record<string, string> = {
   interruptions: "Histórico de paradas e recorrência dos motivos informados.",
   orders: "Ordens locais, execução, prazos e histórico.",
   plans: "Planos de manutenção, calendário e registros de execução.",
+  scheduling:
+    "Reservas de horário, disponibilidade e priorização para revisão humana.",
   third: "Da solicitação ao tratamento financeiro, com revisão humana.",
   imports:
     "Importe arquivos autorizados, revise alterações e reconheça repetidos.",
@@ -158,7 +162,7 @@ export function OperationalShell({
             ? "Demonstração"
             : "Registros locais"}{" "}
           · Sem conexão a máquinas
-          <p>PCM Intelligence · v0.3.0</p>
+          <p>PCM Intelligence · v0.4.0</p>
         </div>
       </aside>
       <div className="main">
@@ -263,6 +267,12 @@ export function OperationalShell({
                   />
                 ) : tab === "orders" ? (
                   <OrdersPage user={user} lookups={lookups.data} search={q} />
+                ) : tab === "scheduling" ? (
+                  <SchedulingPage
+                    user={user}
+                    lookups={lookups.data}
+                    onChanged={lookups.refresh}
+                  />
                 ) : tab === "plans" ? (
                   <PlansPage user={user} lookups={lookups.data} search={q} />
                 ) : tab === "third" ? (
@@ -352,4 +362,8 @@ const AdministrationPage = lazy(() =>
 );
 const AuditPage = lazy(() =>
   import("../pages/Audit").then((m) => ({ default: m.AuditPage })),
+);
+
+const SchedulingPage = lazy(() =>
+  import("../pages/Scheduling").then((m) => ({ default: m.SchedulingPage })),
 );

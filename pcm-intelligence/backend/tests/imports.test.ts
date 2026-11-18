@@ -18,6 +18,8 @@ let admin: string[],
 const batches: string[] = [],
   sources: string[] = [],
   gear = tag + "-EQ";
+const scheduleIds: string[] = [],
+  scheduleWindows: string[] = [];
 const options = {
   dateFormat: "BR",
   timezone: "America/Sao_Paulo",
@@ -123,6 +125,15 @@ beforeAll(async () => {
   sources.push(source.id);
 });
 afterAll(async () => {
+  await db.assignmentHistory.deleteMany({
+    where: { assignmentId: { in: scheduleIds } },
+  });
+  await db.technicianAssignment.deleteMany({
+    where: { id: { in: scheduleIds } },
+  });
+  await db.technicianWorkWindow.deleteMany({
+    where: { id: { in: scheduleWindows } },
+  });
   const entities = await db.externalRecord.findMany({
     where: { sourceId: { in: sources } },
   });
@@ -539,5 +550,68 @@ describe("Outros relatórios autorizados e referências", () => {
       ).durationMinutes,
     ).toBe(60);
     await undoAll(b.id);
+  });
+});
+
+describe("Agenda e reimportação da mesma OS", () => {
+  it("expõe conflito de programação na prévia e sincroniza encerramento importado sem inventar data de execução", async () => {
+    const link = await db.externalRecord.findFirstOrThrow({
+      where: { scope: tag, externalKey: "00001234" },
+    });
+    const o = await db.maintenanceOrder.findUniqueOrThrow({
+      where: { id: link.entityId },
+    });
+    for (let weekday = 0; weekday < 7; weekday++) {
+      const w = await call("post", "/scheduling/work-windows", {
+        technicianId: "TEC-1",
+        weekday,
+        startMinute: 0,
+        endMinute: 1440,
+        active: true,
+      });
+      expect(w.status).toBe(201);
+      scheduleWindows.push(w.body.id);
+    }
+    const startsAt = new Date(Date.now() + 86400000).toISOString(),
+      endsAt = new Date(Date.now() + 90000000).toISOString();
+    const booked = await call("post", "/scheduling/assignments", {
+      kind: "ORDER",
+      targetId: o.id,
+      targetVersion: o.version,
+      technicianId: "TEC-1",
+      startsAt,
+      endsAt,
+      notes: "Reserva revisada para teste de reimportação",
+      reviewConfirmed: true,
+    });
+    expect(booked.status).toBe(201);
+    scheduleIds.push(booked.body.id);
+    const changed = await upload([
+      row("00001234", "Nova programação do relatório"),
+    ]);
+    expect(
+      (await preview(changed.id, { ...options, allowOverwriteModified: true }))
+        .counts.CONFLICT,
+    ).toBe(1);
+    const closed = await upload([
+      row("00001234", "Encerramento informado", startsAt).replace(
+        ";OPEN;",
+        ";COMPLETED;",
+      ),
+    ]);
+    expect(
+      (await preview(closed.id, { ...options, allowOverwriteModified: true }))
+        .counts.UPDATE,
+    ).toBe(1);
+    await apply(closed.id);
+    const a = await db.technicianAssignment.findUniqueOrThrow({
+      where: { id: booked.body.id },
+    });
+    expect(a.status).toBe("CANCELLED");
+    expect(a.completedAt).toBeNull();
+    expect(
+      (await db.maintenanceOrder.findUniqueOrThrow({ where: { id: o.id } }))
+        .completedAt,
+    ).toBeNull();
   });
 });

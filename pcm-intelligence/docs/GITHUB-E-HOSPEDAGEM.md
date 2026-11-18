@@ -20,4 +20,4 @@ O login exige troca da senha temporária antes de consultar dados. A troca encer
 
 A configuração de Deployment Protection da Vercel é independente do login PCM. Quando a plataforma exigir autenticação, o proprietário deverá autorizar o acesso à publicação. Não altere proteções de outros projetos.
 
-A versão 0.3 inclui operações PCM, importações autorizadas de arquivos, relatório preventivo e administração. Sincronização direta SAP/SKA, agenda avançada e modelos preditivos continuam futuros. Nenhum serviço pago obrigatório foi adicionado.
+A versão 0.4 inclui operações PCM, importações autorizadas de arquivos, relatório preventivo, administração e agenda com disponibilidade/conflitos e revisão humana. Sincronização direta SAP/SKA, equipes simultâneas e modelos preditivos continuam futuros. Nenhum serviço pago obrigatório foi adicionado.

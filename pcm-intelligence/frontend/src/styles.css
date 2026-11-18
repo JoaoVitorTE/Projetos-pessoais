@@ -1431,3 +1431,228 @@ a {
     font-size: 13px;
   }
 }
+/* Agenda: reservas locais, capacidade e propostas revisadas pelo PCM. */
+.schedule-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.schedule-tabs {
+  margin-bottom: 22px;
+}
+.schedule-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+.schedule-kpis article {
+  padding: 18px;
+}
+.schedule-kpis span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.schedule-kpis strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 8px;
+}
+.schedule-calendar-wrap {
+  padding: 0;
+  overflow: auto;
+}
+.schedule-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-width: 800px;
+}
+.schedule-weekday {
+  text-align: center;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.schedule-day {
+  min-height: 180px;
+  padding: 10px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.schedule-calendar.week .schedule-day {
+  min-height: 320px;
+}
+.schedule-day.is-today {
+  background: var(--soft);
+}
+.schedule-day.other-month {
+  opacity: 0.65;
+}
+.schedule-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.schedule-day-top button {
+  padding: 4px 8px;
+  color: var(--green);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.schedule-event {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+  padding: 10px 8px;
+  margin-bottom: 9px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.schedule-event > span:first-child {
+  color: var(--green);
+  font-weight: 600;
+}
+.schedule-event.in_progress {
+  border-left-color: #3787cb;
+}
+.schedule-event.blocked {
+  border-left-color: #cf7042;
+  background: #e9984610;
+}
+.schedule-event.completed {
+  border-left-color: #8796a4;
+  opacity: 0.75;
+}
+.schedule-event.cancelled {
+  border-left-color: #8e8e98;
+  opacity: 0.55;
+}
+.schedule-empty {
+  font-size: 11px;
+  color: var(--muted);
+}
+.capacity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.capacity-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+.capacity-grid small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.capacity-grid b {
+  color: var(--green);
+}
+.schedule-status {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 6px 9px;
+  background: var(--soft);
+  color: var(--green);
+}
+.schedule-status.blocked {
+  background: #e9984620;
+  color: #a15a16;
+}
+.schedule-status.in_progress {
+  background: #3787cb18;
+  color: #2979b7;
+}
+.schedule-action {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+.schedule-proposal {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+.schedule-proposal p,
+.schedule-proposal details {
+  font-size: 13px;
+  line-height: 1.65;
+}
+.schedule-proposal summary {
+  cursor: pointer;
+}
+.score {
+  font-size: 12px;
+  color: var(--green);
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--soft);
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .schedule-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .schedule-toolbar strong {
+    font-size: 14px;
+  }
+  .schedule-calendar.week {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+  .schedule-calendar.week .schedule-weekday {
+    display: none;
+  }
+  .schedule-calendar.week .schedule-day {
+    min-height: 120px;
+  }
+  .schedule-tabs button {
+    font-size: 12px;
+    padding: 9px 11px;
+  }
+  .schedule-action {
+    padding: 14px;
+  }
+  .schedule-calendar.month {
+    min-width: 800px;
+  }
+}
+
+@media (max-width: 700px) {
+  .filters .secondary,
+  .schedule-verify {
+    font-size: 13px;
+    gap: 6px;
+  }
+}

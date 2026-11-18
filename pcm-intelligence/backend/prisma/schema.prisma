@@ -34,6 +34,7 @@ model User {
  audits AuditLog[]
  orderChanges OrderHistory[]
  importBatches ImportBatch[]
+ scheduleChanges AssignmentHistory[]
 }
 model Session {
  id String @id
@@ -68,6 +69,8 @@ model Technician {
  name String
  specialty String
  user User?
+ workWindows TechnicianWorkWindow[]
+ absences TechnicianAbsence[]
  assignments TechnicianAssignment[]
  plans MaintenancePlan[]
  orders MaintenanceOrder[]
@@ -112,13 +115,26 @@ model MaintenanceOrder {
 }
 model TechnicianAssignment {
  id String @id @default(cuid())
+ version Int @default(1)
  technicianId String
  technician Technician @relation(fields: [technicianId], references: [id])
- orderId String
- order MaintenanceOrder @relation(fields: [orderId], references: [id])
+ orderId String?
+ order MaintenanceOrder? @relation(fields: [orderId], references: [id])
+ planId String?
+ plan MaintenancePlan? @relation(fields: [planId], references: [id])
+ scheduledFor DateTime?
  startsAt DateTime
  endsAt DateTime
+ status String @default("SCHEDULED")
+ actualStartedAt DateTime?
+ completedAt DateTime?
+ notes String?
+ createdAt DateTime @default(now())
+ history AssignmentHistory[]
  @@index([technicianId, startsAt])
+ @@index([orderId, status])
+ @@index([planId, status])
+ @@index([startsAt, endsAt])
 }
 model MaintenancePlan {
  id String @id
@@ -134,6 +150,7 @@ model MaintenancePlan {
  active Boolean @default(true)
  isDemo Boolean @default(true)
  executions MaintenanceExecution[]
+ assignments TechnicianAssignment[]
  @@index([nextExecution])
 }
 model MaintenanceExecution {
@@ -319,4 +336,40 @@ model ImportChange {
  undone Boolean @default(false)
  createdAt DateTime @default(now())
  @@index([batchId, sequence])
+}
+
+model TechnicianWorkWindow {
+ id String @id @default(cuid())
+ version Int @default(1)
+ technicianId String
+ technician Technician @relation(fields: [technicianId], references: [id])
+ weekday Int
+ startMinute Int
+ endMinute Int
+ active Boolean @default(true)
+ @@index([technicianId, weekday])
+}
+model TechnicianAbsence {
+ id String @id @default(cuid())
+ version Int @default(1)
+ technicianId String
+ technician Technician @relation(fields: [technicianId], references: [id])
+ startsAt DateTime
+ endsAt DateTime
+ reason String
+ active Boolean @default(true)
+ @@index([technicianId, startsAt, endsAt])
+}
+model AssignmentHistory {
+ id String @id @default(cuid())
+ assignmentId String
+ assignment TechnicianAssignment @relation(fields: [assignmentId], references: [id])
+ userId String
+ user User @relation(fields: [userId], references: [id])
+ action String
+ before Json?
+ after Json
+ notes String
+ createdAt DateTime @default(now())
+ @@index([assignmentId, createdAt])
 }

@@ -1,3 +1,9 @@
+import {
+  scheduleLock,
+  guardReservedTarget,
+  reservedFieldsChanged,
+  syncOrderAssignments,
+} from "../scheduling/lifecycle.js";
 import type { PrismaClient, Prisma, ImportSource } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import {
@@ -182,6 +188,18 @@ export async function planImport(
     where: { id: { in: links.map((l) => l.entityId) } },
   });
   const entityMap = new Map<string, any>(entities.map((e: any) => [e.id, e]));
+  const reserved = await db.technicianAssignment.findMany({
+    where: {
+      status: { in: ["SCHEDULED", "IN_PROGRESS", "BLOCKED"] },
+      OR: [
+        { orderId: { in: links.map((l) => l.entityId) } },
+        { planId: { in: links.map((l) => l.entityId) } },
+      ],
+    },
+    select: { orderId: true, planId: true },
+  });
+  const protectedIds = new Set(reserved.map((r) => r.orderId || r.planId));
+
   const [gear, sectors, techs] = await Promise.all([
     db.equipment.findMany({
       where: {
@@ -303,6 +321,38 @@ export async function planImport(
           reason:
             "Registro foi alterado localmente após a importação. Revise antes de autorizar substituição.",
         };
+      if (
+        entity &&
+        protectedIds.has(entity.id) &&
+        (target === "ORDERS" || target === "PLANS")
+      ) {
+        const patch = {
+          ...patchFor(target, row.data),
+          equipmentId: row.data.equipmentId,
+          ...(row.data.technician
+            ? {
+                technicianId: techMap.get(
+                  String(row.data.technician).toLowerCase(),
+                )?.id,
+              }
+            : {}),
+        };
+        if (
+          reservedFieldsChanged(
+            target === "ORDERS" ? "ORDER" : "PLAN",
+            entity,
+            patch,
+          )
+        )
+          return {
+            ...row,
+            action: "CONFLICT",
+            entityId: entity.id,
+            expectedVersion: entity.version,
+            reason:
+              "Há reservas ativas na agenda. Reprograme ou cancele antes de alterar datas, equipamento ou responsável.",
+          };
+      }
       const effective = { ...entity, ...row.data };
       if (
         target === "INTERRUPTIONS" &&
@@ -512,6 +562,7 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           409,
           "Outra importação está sendo processada. Tente novamente em alguns segundos.",
         );
+      await scheduleLock(tx);
       const batch = must(
         await tx.importBatch.findUnique({
           where: { id },
@@ -583,6 +634,31 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           });
           continue;
         }
+        if (current && (target === "ORDERS" || target === "PLANS"))
+          await guardReservedTarget(
+            tx,
+            target === "ORDERS" ? "ORDER" : "PLAN",
+            current.id,
+            current,
+            {
+              ...patchFor(target, row.data),
+              equipmentId: row.data.equipmentId,
+              ...(row.data.technician
+                ? {
+                    technicianId: (
+                      await tx.technician.findFirst({
+                        where: {
+                          name: {
+                            equals: String(row.data.technician),
+                            mode: "insensitive",
+                          },
+                        },
+                      })
+                    )?.id,
+                  }
+                : {}),
+            },
+          );
         const refs = await references(tx, source, id, row, o, user);
         const patch = patchFor(target, row.data);
         let data: Record<string, any> = current
@@ -632,6 +708,13 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           });
           counts.created++;
         }
+        if (current && target === "ORDERS")
+          await syncOrderAssignments(
+            tx,
+            after,
+            user,
+            "Situação atualizada por importação revisada. Lote " + id,
+          );
         const newLink = await tx.externalRecord.upsert({
           where: {
             scope_entityType_externalKey: {

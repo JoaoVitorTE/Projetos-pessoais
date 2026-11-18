@@ -1,3 +1,8 @@
+import {
+  scheduleLock,
+  guardReservedTarget,
+  syncOrderAssignments,
+} from "../scheduling/lifecycle.js";
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -224,6 +229,7 @@ export function ordersRouter(db: PrismaClient) {
         user = actor(res);
       requireRole(res, [...planners, "TECHNICIAN"]);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
         const before = must(
           await tx.maintenanceOrder.findUnique({
             where: { id: req.params.id },
@@ -261,6 +267,7 @@ export function ordersRouter(db: PrismaClient) {
         )
           throw new HttpError(409, "Transição de status não permitida");
         const { version: expected, changeNote, ...patch } = body;
+        await guardReservedTarget(tx, "ORDER", before.id, before, patch);
         updated(
           await tx.maintenanceOrder.updateMany({
             where: { id: before.id, version: expected },
@@ -289,6 +296,7 @@ export function ordersRouter(db: PrismaClient) {
             notes: changeNote,
           },
         });
+        await syncOrderAssignments(tx, after, user, changeNote);
         await audit(tx, user, "ORDER_UPDATED", "MaintenanceOrder", {
           before,
           after,

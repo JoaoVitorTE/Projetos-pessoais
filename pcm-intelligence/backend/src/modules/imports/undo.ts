@@ -1,3 +1,4 @@
+import { scheduleLock } from "../scheduling/lifecycle.js";
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { model, restore } from "./engine.js";
 import { fingerprint } from "./specs.js";
@@ -52,8 +53,32 @@ export async function undoPreview(db: PrismaClient, id: string) {
     })
   )
     blockers.push("Há execuções de planos criados por este lote");
+  if (
+    await db.technicianAssignment.count({
+      where: {
+        OR: [
+          { orderId: { in: created("ORDERS") } },
+          { planId: { in: created("PLANS") } },
+        ],
+      },
+    })
+  )
+    blockers.push(
+      "Há reservas ou histórico de agenda vinculados aos registros criados",
+    );
   const techIds = created("TECHNICIAN"),
     gearIds = created("EQUIPMENT");
+  if (
+    (await db.technicianWorkWindow.count({
+      where: { technicianId: { in: techIds } },
+    })) ||
+    (await db.technicianAbsence.count({
+      where: { technicianId: { in: techIds } },
+    }))
+  )
+    blockers.push(
+      "Técnico criado possui jornada ou indisponibilidade cadastrada",
+    );
   if (await db.user.count({ where: { technicianId: { in: techIds } } }))
     blockers.push("Técnico criado já foi vinculado a usuário");
   if (
@@ -105,6 +130,7 @@ export async function undoChunk(db: PrismaClient, id: string, user: Actor) {
       >`SELECT pg_try_advisory_xact_lock(739104,1) AS locked`;
       if (!lock[0].locked)
         throw new HttpError(409, "Outra importação está sendo processada");
+      await scheduleLock(tx);
       const batch = must(await tx.importBatch.findUnique({ where: { id } }));
       if (batch.status === "REVERTED") return batch;
       if (!["APPLIED", "PARTIAL", "REVERTING"].includes(batch.status))

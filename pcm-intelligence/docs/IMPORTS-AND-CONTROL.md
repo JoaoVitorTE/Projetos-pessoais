@@ -18,7 +18,9 @@ Alterações locais posteriores à importação são protegidas por versão. A s
 
 Arquivos brutos ficam no banco apenas durante prévia/processamento. Prévia expira após uma hora; dados de prévias expiradas são descartados no próximo upload. Ao finalizar ou encerrar um lote, o conteúdo bruto é descartado. Histórico, diferenças aplicadas, chaves e erros são preservados para rastreabilidade; exportações autorizadas continuam sendo dados confidenciais que exigem política de acesso e retenção da empresa.
 
-`SapExportImportAdapter`, `SkaReportsImportAdapter` e `GenericImportAdapter` compartilham o parser e o contrato de mapeamento. Sincronização automática requer documentação, autorização e mecanismo oficial. Não há scraping, credenciais industriais ou consulta a endpoints internos.
+`SapExportImportAdapter`, `SkaReportsImportAdapter` e `GenericImportAdapter` compartilham o parser e o contrato de mapeamento. A [Agenda inteligente](SCHEDULING.md) protege reservas ativas contra alteração silenciosa de datas, técnico ou equipamento. Mudanças de status sincronizam bloqueio/encerramento; reverter um lote não reativa reservas canceladas.
+
+Sincronização automática requer documentação, autorização e mecanismo oficial. Não há scraping, credenciais industriais ou consulta a endpoints internos.
 
 ## Relatório e assistente
 
@@ -52,4 +54,4 @@ A limpeza solicitada pelo responsável é uma operação administrativa única, 
 - Fluxo Chromium com importação, reimportação, reversão, PDF/Excel, técnico, antes/depois e consulta estruturada. Sete telas verificadas em 390 × 844 sem overflow horizontal e sem erros JavaScript.
 - Migration aditiva testada primeiro em branch de validação Neon. A senha do administrador não é redefinida pela atualização.
 
-Continuam futuros: sincronização SAP/SKA automática, agenda com conflitos/disponibilidade, modelos preditivos, monitoramento de ar comprimido na interface e armazenamento de anexos. As fases completas do projeto não são declaradas concluídas por esta versão.
+Continuam futuros: sincronização SAP/SKA automática, modelos preditivos, monitoramento de ar comprimido na interface e armazenamento de anexos. As fases completas do projeto não são declaradas concluídas por esta versão.

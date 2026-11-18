@@ -1,3 +1,5 @@
+import { scheduleLock } from "../scheduling/lifecycle.js";
+import { ACTIVE } from "../scheduling/intervals.js";
 import { Router } from "express";
 import { z } from "zod";
 import { hash } from "bcryptjs";
@@ -254,6 +256,21 @@ export function administrationRouter(db: PrismaClient) {
       requireRole(res, ["ADMIN", "MANAGER", "PLANNER"]);
       const data = tech.parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
+        if (
+          !data.active &&
+          (await tx.technicianAssignment.count({
+            where: {
+              technicianId: req.params.id,
+              status: { in: ACTIVE },
+              OR: [{ endsAt: { gt: new Date() } }, { status: "IN_PROGRESS" }],
+            },
+          }))
+        )
+          throw new HttpError(
+            409,
+            "Reprograme ou cancele as reservas futuras antes de desativar o técnico.",
+          );
         const before = must(
           await tx.technician.findUnique({ where: { id: req.params.id } }),
         );

@@ -36,7 +36,7 @@ A vinculação técnica usa `User.technicianId`; não se presume que qualquer t�
 - O documento é uma referência textual, não um arquivo enviado ao sistema. Upload e armazenamento de anexos permanecem futuros e estão identificados assim na tela.
 - MTTR não é calculado usando duração de interrupção como se fosse tempo de reparo. MTBF e OEE também aguardam bases apropriadas; a interface informa os dados ausentes. Não são inventados valores ou economia.
 - Cumprimento usa execuções pelo vencimento original e planos atualmente previstos no período; não reconstrói um planejamento histórico que não foi registrado. Gráficos diários usam UTC, identificado na interface.
-- O calendário mostra o próximo vencimento cadastrado, sem gerar ocorrências fictícias ilimitadas. Agenda avançada com conflitos de horários e priorização assistida ainda não está implementada.
+- O calendário mostra o próximo vencimento cadastrado, sem gerar ocorrências fictícias ilimitadas. A [agenda com conflitos e priorização para revisão humana](SCHEDULING.md) está disponível a partir da versão 0.4, mantendo este calendário de vencimentos.
 - Consulta paginada até 100 registros por página; exportação de até 5.000 OS por filtro; seletores de cadastro com até 1.000 equipamentos. O calendário pede filtros se houver mais de 100 planos no mês.
 
 ## Arquitetura

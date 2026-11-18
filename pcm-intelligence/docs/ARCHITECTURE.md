@@ -9,6 +9,7 @@ As páginas são carregadas sob demanda, inclusive gráficos Recharts. A interfa
 - `operations`: equipamentos, interrupções, recorrências, OS, planos/calendário, serviços de terceiros e indicadores calculados. Histórico e auditoria na mesma transação. Versões impedem sobrescrita concorrente.
 - `imports`: adaptadores independentes de fornecedor, parser CSV/ExcelJS, validação, prévia, confirmação, processamento em trechos e reversão. `ImportSource` guarda layout/base; `ExternalRecord` identifica registros já importados; `ImportBatch` e `ImportChange` mantêm processamento, diferenças e rastreabilidade. Lock transacional serializa aplicação/reversão; cada alteração usa versão esperada.
 - `administration`: usuários, perfis, senhas temporárias, técnicos, setores e auditoria filtrada/paginada. Campos públicos de conta não incluem hash. Mudanças de acesso revogam sessões.
+- `scheduling`: reservas de OS/planos, jornadas, indisponibilidades, execução por etapas, propostas por regras e histórico. Um lock transacional coordena agenda, mudanças de OS/planos e importações; versões impedem confirmações antigas. Regras de intervalos e vínculos também são protegidas por constraints no banco. [Fluxo, permissões e limites](SCHEDULING.md).
 - `intelligence`: relatório preventivo JSON/PDF/Excel, fatos de atraso e Assistente PCM de leitura com templates. Não infere causas mecânicas, probabilidades ou economia.
 
 ## Autenticação e autorização
@@ -25,4 +26,4 @@ Testes só iniciam com `.env.test`, modo demo e banco cujo nome termina em `_tes
 
 A API usa Prisma singleton na função Vercel e conexão Neon com pool. A URL direta é reservada às ferramentas de schema. Segredos ficam em `.env` ignorado ou variáveis sensíveis do provedor e nunca usam prefixo `VITE_`. Anexos ainda são referências textuais; armazenamento de arquivos é uma evolução futura.
 
-Limites e fluxos completos em [IMPORTS-AND-CONTROL.md](IMPORTS-AND-CONTROL.md). Monitoramento de ar comprimido na interface, agendamento com disponibilidade/conflitos e sincronização oficial automática permanecem futuros.
+Limites e fluxos completos em [IMPORTS-AND-CONTROL.md](IMPORTS-AND-CONTROL.md). Monitoramento de ar comprimido na interface, equipes simultâneas no mesmo equipamento, análises estatísticas avançadas e sincronização oficial automática permanecem futuros.

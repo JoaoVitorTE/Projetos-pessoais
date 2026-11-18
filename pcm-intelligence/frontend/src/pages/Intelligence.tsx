@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
 import { Empty, State } from "../components/OperationalUI";
+import { scheduleLabels } from "../components/scheduling/types";
+import { dateTime } from "../components/scheduling/dates";
 import { fmt, statusLabel, typeLabel } from "../types/operations";
 type Answer = {
   intent: string;
@@ -13,6 +15,10 @@ type Answer = {
 };
 const columns: Record<string, string> = {
   id: "Identificador",
+  activity: "OS / plano",
+  technician: "Técnico",
+  startsAt: "Início reservado",
+  endsAt: "Término reservado",
   sapReference: "Referência SAP",
   equipmentId: "Equipamento",
   interruptions: "Interrupções",
@@ -31,7 +37,13 @@ function display(key: string, value: unknown) {
   if (value == null) return "Não informado";
   if (["nextExecution", "scheduledAt", "stageEnteredAt"].includes(key))
     return fmt(String(value));
-  if (key === "status") return statusLabel[String(value)] || String(value);
+  if (["startsAt", "endsAt"].includes(key)) return dateTime(String(value));
+  if (key === "status")
+    return (
+      statusLabel[String(value)] ||
+      scheduleLabels[String(value)] ||
+      String(value)
+    );
   if (key === "type") return typeLabel[String(value)] || String(value);
   return String(value);
 }

@@ -1,3 +1,8 @@
+import {
+  scheduleLock,
+  guardReservedTarget,
+  recordPlanCompletion,
+} from "../scheduling/lifecycle.js";
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -121,9 +126,11 @@ export function plansRouter(db: PrismaClient) {
         .extend({ version })
         .parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
         const before = must(
           await tx.maintenancePlan.findUnique({ where: { id: req.params.id } }),
         );
+        await guardReservedTarget(tx, "PLAN", before.id, before, data);
         updated(
           await tx.maintenancePlan.updateMany({
             where: { id: before.id, version: expected },
@@ -152,44 +159,20 @@ export function plansRouter(db: PrismaClient) {
         .parse(req.body);
       if (data.executedAt > new Date())
         throw new HttpError(400, "Execução não pode estar no futuro");
-      const row = await db.$transaction(async (tx) => {
-        const plan = must(
-          await tx.maintenancePlan.findUnique({
-            where: { id: req.params.id },
-            include: { technician: true },
-          }),
-        );
-        if (!plan.active) throw new HttpError(409, "O plano está inativo");
-        if (
-          actor(res).role.name === "TECHNICIAN" &&
-          plan.technicianId !== actor(res).technicianId
-        )
-          throw new HttpError(403, "Plano atribuído a outro técnico");
-        let next = new Date(plan.nextExecution);
-        do {
-          next = new Date(next.getTime() + plan.intervalDays * 86400000);
-        } while (next <= data.executedAt);
-        updated(
-          await tx.maintenancePlan.updateMany({
-            where: { id: plan.id, version: data.version },
-            data: { nextExecution: next, version: { increment: 1 } },
-          }),
-        );
-        const execution = await tx.maintenanceExecution.create({
-          data: {
-            planId: plan.id,
-            executedAt: data.executedAt,
-            scheduledFor: plan.nextExecution,
-            technicianName: plan.technician.name,
-            notes: data.notes,
-          },
-        });
-        await audit(tx, actor(res), "PLAN_COMPLETED", "MaintenanceExecution", {
-          execution,
-          nextExecution: next,
-        });
-        return { execution, nextExecution: next };
-      });
+      const row = await db.$transaction(
+        async (tx) => {
+          await scheduleLock(tx);
+          return recordPlanCompletion(
+            tx,
+            req.params.id,
+            data.version,
+            data.executedAt,
+            data.notes,
+            actor(res),
+          );
+        },
+        { timeout: 25000 },
+      );
       res.status(201).json(row);
     }),
   );

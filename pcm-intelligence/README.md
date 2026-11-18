@@ -1,10 +1,10 @@
-# PCM Intelligence — Importações e controle (v0.3)
+# PCM Intelligence — Agenda inteligente (v0.4)
 
 MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Opera com cadastros locais e arquivos exportados autorizados; mantém modo de demonstração separado. Sem conexão direta SAP/SKA e sem comandos industriais.
 
 Disponível: dashboard calculado; equipamentos; interrupções e recorrência de motivos; OS internas com histórico e exportação CSV; preventivas/lubrificação com calendário e conclusão; terceiros com checklist configurável, etapas, histórico e rascunho para revisão humana. A senha e os registros da Fase 1 são preservados nas atualizações.
 
-Disponível nesta versão: importação CSV/XLSX com prévia, mapeamento, repetidos, atualização, conflitos e reversão; relatório preventivo PDF/Excel; Assistente PCM estruturado; alertas de prazo; cadastros de usuários/técnicos/setores e auditoria pesquisável. Consulte [uso diário, permissões e limites](docs/IMPORTS-AND-CONTROL.md) e [regras operacionais](docs/PHASE2.md). Sincronização SAP automática, agenda avançada, ar comprimido na interface e modelos preditivos continuam futuros.
+Disponível nesta versão: importação CSV/XLSX com prévia, mapeamento, repetidos, atualização, conflitos e reversão; relatório preventivo PDF/Excel; Assistente PCM estruturado; alertas de prazo; cadastros de usuários/técnicos/setores e auditoria pesquisável. Consulte [uso diário, permissões e limites](docs/IMPORTS-AND-CONTROL.md) e [regras operacionais](docs/PHASE2.md). Nova etapa: [Agenda inteligente](docs/SCHEDULING.md), com visões semanal/mensal, jornadas e ausências configuráveis, conflitos, execução por etapas e propostas explicáveis para revisão humana. Sincronização SAP automática, ar comprimido na interface, análises estatísticas avançadas e modelos preditivos continuam futuros.
 
 ## Execução local no Windows (PowerShell)
 
@@ -59,7 +59,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os 80 testes cobrem importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 106 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 
