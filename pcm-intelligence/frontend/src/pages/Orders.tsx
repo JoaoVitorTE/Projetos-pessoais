@@ -136,7 +136,7 @@ export function OrdersPage({
             <thead>
               <tr>
                 {[
-                  "OS local",
+                  "Ordem / referência",
                   "Equipamento",
                   "Prioridade",
                   "Responsável",
@@ -152,7 +152,11 @@ export function OrdersPage({
               {data.data.items.map((o) => (
                 <tr key={o.id}>
                   <td className="code">
-                    {o.id}
+                    {o.sapReference || o.id}
+                    {o.sapReference && (
+                      <small>Referência SAP · cópia local</small>
+                    )}
+                    {o.sapReference && <small>{o.id}</small>}
                     <small>{typeLabel[o.type]}</small>
                   </td>
                   <td>
@@ -456,6 +460,12 @@ function OrderDetail({ id, onClose }: { id: string; onClose: () => void }) {
       {data.data && (
         <>
           <p>{data.data.description}</p>
+          {data.data.sapReference && (
+            <p>
+              Referência SAP: <strong>{data.data.sapReference}</strong> ·
+              Registro local.
+            </p>
+          )}
           <Badge status={data.data.status} />
           <ol className="timeline">
             {data.data.history?.map((x) => (
