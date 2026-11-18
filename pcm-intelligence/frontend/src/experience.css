@@ -5,6 +5,13 @@
   --shadow: 0 10px 30px #14304708;
   --radius: 16px;
   --muted: #657487;
+  --on-primary: #fff;
+}
+button {
+  color: var(--on-primary);
+}
+.button-link {
+  color: var(--on-primary);
 }
 body {
   background: var(--bg);
@@ -1924,6 +1931,7 @@ summary:focus-visible {
 [data-theme="dark"] {
   --muted: #a3b0c1;
   --navy: #102b3f;
+  --on-primary: #102b3f;
 }
 .home-metric:focus-visible,
 .shortcut-card:focus-visible {
