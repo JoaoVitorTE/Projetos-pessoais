@@ -15,6 +15,7 @@ import {
 } from "../components/OperationalUI";
 import {
   canPlan,
+  equipmentCode,
   fmt,
   localDate,
   orderStates,
@@ -164,7 +165,10 @@ export function OrdersPage({
                     <small>{typeLabel[o.type]}</small>
                   </td>
                   <td>
-                    {o.equipmentId}
+                    {equipmentCode(
+                      o.equipment ||
+                        lookups.equipment.find((e) => e.id === o.equipmentId),
+                    )}
                     <small>{o.description.slice(0, 70)}</small>
                   </td>
                   <td>

@@ -136,7 +136,7 @@ export function createDemoData(now = new Date()) {
   }));
   return {
     sectors,
-    equipment,
+    equipment: equipment.map((e) => ({ ...e, tag: e.id })),
     technicians,
     interruptions,
     orders,

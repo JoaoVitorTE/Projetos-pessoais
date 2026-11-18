@@ -13,12 +13,18 @@ export async function dashboard(db: PrismaClient, f: Filters) {
     from = f.from ? new Date(f.from) : new Date(to.getTime() - 30 * 86400000);
   if (from > to || to.getTime() - from.getTime() > 366 * 86400000)
     throw new HttpError(400, "Selecione um período válido de até 366 dias");
-  const where = equipmentWhere(f);
+  const where = { ...equipmentWhere(f), deletedAt: null };
   const [equipment, interruptions, orders, plans, executions] =
     await Promise.all([
       db.equipment.findMany({
         where,
-        select: { id: true, name: true, status: true, criticality: true },
+        select: {
+          id: true,
+          tag: true,
+          name: true,
+          status: true,
+          criticality: true,
+        },
       }),
       db.interruption.findMany({
         where: {
@@ -26,7 +32,16 @@ export async function dashboard(db: PrismaClient, f: Filters) {
           startedAt: { lt: to },
           OR: [{ endedAt: { gt: from } }, { endedAt: null }],
         },
-        include: { equipment: { select: { id: true, name: true } } },
+        include: {
+          equipment: {
+            select: {
+              id: true,
+              tag: true,
+              name: true,
+              sector: { select: { name: true } },
+            },
+          },
+        },
       }),
       db.maintenanceOrder.groupBy({
         by: ["status"],
@@ -78,7 +93,8 @@ export async function dashboard(db: PrismaClient, f: Filters) {
     grouped.set(i.equipmentId, [...(grouped.get(i.equipmentId) || []), i]);
     const minutes = overlapMinutes(i.startedAt, i.endedAt, from, to, now);
     const row = eq.get(i.equipmentId) || {
-      name: i.equipmentId,
+      name:
+        (i.equipment.tag || i.equipmentId) + " · " + i.equipment.sector.name,
       count: 0,
       minutes: 0,
     };

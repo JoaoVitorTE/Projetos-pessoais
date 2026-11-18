@@ -11,6 +11,9 @@ export type User = {
 export type Equipment = {
   version: number;
   id: string;
+  tag: string | null;
+  equipmentNumber: string | null;
+  deletedAt?: string | null;
   name: string;
   sectorId: string;
   criticality: number;
@@ -73,6 +76,8 @@ export type Plan = {
   intervalDays: number;
   nextExecution: string;
   active: boolean;
+  taskListReference?: string | null;
+  tasks?: PlanTask[];
   executions?: {
     id: string;
     executedAt: string;
@@ -81,6 +86,21 @@ export type Plan = {
     technicianName: string;
   }[];
 };
+export type PlanTask = {
+  code: string;
+  description: string;
+  estimatedMinutes?: number | null;
+};
+export const equipmentCode = (
+  equipment:
+    | { id: string; tag?: string | null; sector?: { name: string } }
+    | null
+    | undefined,
+) =>
+  equipment?.tag
+    ? equipment.tag +
+      (equipment.sector?.name ? " · " + equipment.sector.name : "")
+    : "TAG pendente · ref. " + (equipment?.id || "não informada");
 export type Interruption = {
   version: number;
   id: string;

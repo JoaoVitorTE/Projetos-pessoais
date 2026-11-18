@@ -91,7 +91,7 @@ export function experienceRouter(db: PrismaClient) {
         upcoming,
         recent,
       ] = await Promise.all([
-        db.equipment.count(),
+        db.equipment.count({ where: { deletedAt: null } }),
         canSetup ? db.sector.count() : Promise.resolve(0),
         canSetup
           ? db.technician.count({ where: { active: true } })

@@ -176,7 +176,9 @@ describe("Relatório e assistente estruturado", () => {
   it("relatório calcula dados do banco e preserva filtros", async () => {
     const r = await call("get", "/reports/preventives?equipmentId=EQ-001");
     expect(r.status).toBe(200);
-    expect(r.body.items.every((i: any) => i.equipment === "EQ-001")).toBe(true);
+    expect(r.body.items.every((i: any) => i.equipmentId === "EQ-001")).toBe(
+      true,
+    );
     expect(r.body.summary.plans).toBe(
       r.body.items.filter((i: any) => i.kind === "Plano").length,
     );

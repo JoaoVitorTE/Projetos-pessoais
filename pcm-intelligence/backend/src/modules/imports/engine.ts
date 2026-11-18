@@ -1,4 +1,9 @@
 import {
+  resolveEquipment,
+  tagSchema,
+} from "../operations/equipment-identity.js";
+import { tasksSchema } from "../operations/plan-tasks.js";
+import {
   scheduleLock,
   guardReservedTarget,
   reservedFieldsChanged,
@@ -41,6 +46,7 @@ const dates = [
   "nextExecution",
   "createdAt",
   "updatedAt",
+  "deletedAt",
 ];
 export function restore(data: Record<string, any>) {
   return Object.fromEntries(
@@ -50,7 +56,14 @@ export function restore(data: Record<string, any>) {
   );
 }
 export type Planned = Normalized & {
-  action: "CREATE" | "UPDATE" | "SKIP" | "INVALID" | "DUPLICATE" | "CONFLICT";
+  action:
+    | "CREATE"
+    | "UPDATE"
+    | "SKIP"
+    | "INVALID"
+    | "DUPLICATE"
+    | "CONFLICT"
+    | "GROUPED";
   entityId?: string;
   expectedVersion?: number;
   reason?: string;
@@ -134,7 +147,7 @@ export function defaults(
 }
 function patchFor(target: Target, data: Record<string, any>) {
   const allowed: Record<Target, string[]> = {
-    EQUIPMENT: ["name", "status", "criticality"],
+    EQUIPMENT: ["name", "status", "criticality", "tag", "equipmentNumber"],
     ORDERS: [
       "description",
       "type",
@@ -145,7 +158,15 @@ function patchFor(target: Target, data: Record<string, any>) {
       "completedAt",
       "notes",
     ],
-    PLANS: ["title", "type", "intervalDays", "nextExecution", "active"],
+    PLANS: [
+      "title",
+      "type",
+      "intervalDays",
+      "nextExecution",
+      "active",
+      "taskListReference",
+      "tasks",
+    ],
     INTERRUPTIONS: ["startedAt", "endedAt", "type", "reason", "description"],
   };
   return Object.fromEntries(
@@ -171,6 +192,74 @@ export async function planImport(
       i + preview.headerRow + 1,
     ),
   );
+  // SAP/ERP exports may repeat plan metadata once per operation. Consolidate only
+  // when every plan field agrees; conflicting headers or operation codes stay invalid.
+  if (target === "PLANS") {
+    const groups = new Map<string, Normalized[]>();
+    for (const row of normalized)
+      if (row.externalKey)
+        groups.set(row.externalKey, [
+          ...(groups.get(row.externalKey) || []),
+          row,
+        ]);
+    for (const group of groups.values())
+      if (group.some((r) => r.data.tasks)) {
+        if (group.some((r) => r.error)) {
+          for (const row of group)
+            row.error =
+              row.error ||
+              "Há uma tarefa inválida neste plano. Corrija todas as operações para importar a lista completa.";
+          continue;
+        }
+        const metadata = (r: Normalized) =>
+          fingerprint(
+            Object.fromEntries(
+              Object.entries(r.data).filter(([k]) => k !== "tasks"),
+            ),
+          );
+        if (new Set(group.map(metadata)).size > 1) {
+          group.forEach(
+            (r) =>
+              (r.error =
+                "O mesmo plano/item tem dados diferentes. Revise a chave do plano e a segunda coluna da chave."),
+          );
+          continue;
+        }
+        const tasks = new Map<string, any>();
+        let conflicting = false;
+        for (const row of group)
+          for (const task of row.data.tasks || []) {
+            const key = task.code.toUpperCase();
+            if (
+              tasks.has(key) &&
+              fingerprint(tasks.get(key)) !== fingerprint(task)
+            )
+              conflicting = true;
+            tasks.set(key, task);
+          }
+        try {
+          if (conflicting)
+            throw Error(
+              "Código de tarefa repetido com descrições ou tempos diferentes",
+            );
+          const list = tasksSchema.parse(
+            [...tasks.values()].sort((a, b) => a.code.localeCompare(b.code)),
+          );
+          for (const row of group) {
+            row.data.tasks = list;
+            row.hash = fingerprint(
+              Object.fromEntries(
+                Object.entries(row.data).filter(
+                  ([k]) => !["sector", "criticality"].includes(k),
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          group.forEach((r) => (r.error = (e as Error).message));
+        }
+      }
+  }
   const seen = new Map<string, Normalized[]>();
   for (const row of normalized) {
     if (row.error) continue;
@@ -203,7 +292,26 @@ export async function planImport(
   const [gear, sectors, techs] = await Promise.all([
     db.equipment.findMany({
       where: {
-        id: { in: normalized.map((r) => String(r.data.equipmentId || "")) },
+        OR: [
+          {
+            id: { in: normalized.map((r) => String(r.data.equipmentId || "")) },
+          },
+          { id: { in: links.map((l) => l.entityId) } },
+          {
+            tag: {
+              in: normalized.map((r) => String(r.data.equipmentId || "")),
+              mode: "insensitive",
+            },
+          },
+          {
+            equipmentNumber: {
+              in: normalized.flatMap((r) => [
+                String(r.data.equipmentId || ""),
+                String(r.data.equipmentNumber || ""),
+              ]),
+            },
+          },
+        ],
       },
     }),
     db.sector.findMany(),
@@ -227,12 +335,24 @@ export async function planImport(
       if (dup[0] !== row)
         return {
           ...row,
-          action: "DUPLICATE",
-          reason: "Linha idêntica à linha " + dup[0].rowNumber,
+          action:
+            target === "PLANS" && row.data.tasks ? "GROUPED" : "DUPLICATE",
+          reason:
+            target === "PLANS" && row.data.tasks
+              ? "Tarefa agrupada no plano da linha " + dup[0].rowNumber
+              : "Linha idêntica à linha " + dup[0].rowNumber,
         };
     }
     const link = linkMap.get(row.externalKey),
       entity = link ? entityMap.get(link.entityId) : undefined;
+    if (target === "EQUIPMENT" && entity?.deletedAt)
+      return {
+        ...row,
+        action: "CONFLICT",
+        entityId: entity.id,
+        reason:
+          "Equipamento excluído. Restaure o cadastro antes de reimportar.",
+      };
     if (link && entity && link.contentHash === row.hash)
       return {
         ...row,
@@ -242,6 +362,67 @@ export async function planImport(
         reason: "Já importado; conteúdo sem alteração",
       };
     try {
+      const chosenSector = row.data.sector
+        ? sectorMap.get(String(row.data.sector).toLowerCase())?.id
+        : o.defaultSectorId;
+      if (target !== "EQUIPMENT") {
+        const raw = String(row.data.equipmentId);
+        row.data.referenceTag = raw;
+        const found =
+          row.data.sector && !chosenSector
+            ? undefined
+            : resolveEquipment(gear, raw, chosenSector);
+        if (found) row.data.equipmentId = found.id;
+        else if (gearMap.has(raw))
+          row.data.equipmentId =
+            "EQ-REF-" +
+            fingerprint([raw, row.data.sector || chosenSector]).slice(0, 24);
+      }
+      if (target === "EQUIPMENT") {
+        const sameIdentity = gear.find(
+          (g) =>
+            g.id !== entity?.id &&
+            g.sectorId === chosenSector &&
+            g.tag?.toUpperCase() === row.data.tag,
+        );
+        if (sameIdentity)
+          throw Error(
+            "TAG já cadastrada neste setor. Edite ou restaure o equipamento existente.",
+          );
+        if (
+          row.data.equipmentNumber &&
+          gear.some(
+            (g) =>
+              g.id !== entity?.id &&
+              g.equipmentNumber === row.data.equipmentNumber,
+          )
+        )
+          throw Error("Número do equipamento já utilizado em outro cadastro.");
+        const sameFile = normalized.filter(
+          (n) =>
+            !n.error &&
+            n.data.tag === row.data.tag &&
+            String(n.data.sector || o.defaultSectorId || "").toUpperCase() ===
+              String(
+                row.data.sector || o.defaultSectorId || "",
+              ).toUpperCase() &&
+            n.externalKey !== row.externalKey,
+        );
+        if (sameFile.length)
+          throw Error(
+            "A mesma TAG aparece em mais de um equipamento do mesmo setor neste arquivo.",
+          );
+        if (
+          row.data.equipmentNumber &&
+          normalized.some(
+            (n) =>
+              !n.error &&
+              n.externalKey !== row.externalKey &&
+              n.data.equipmentNumber === row.data.equipmentNumber,
+          )
+        )
+          throw Error("Número do equipamento repetido no arquivo.");
+      }
       if (o.defaultSectorId && !sectors.some((s) => s.id === o.defaultSectorId))
         throw Error("Setor padrão não cadastrado");
       if (link && !entity)
@@ -296,18 +477,6 @@ export async function planImport(
           throw Error("Técnico está inativo: " + row.data.technician);
       }
       if (!entity) defaults(target, row.data, o);
-      if (
-        target === "EQUIPMENT" &&
-        entity &&
-        entity.id !== row.data.equipmentId
-      )
-        throw Error(
-          "Código do equipamento vinculado não pode ser alterado pela importação",
-        );
-      if (target === "EQUIPMENT" && !link && gearMap.has(row.data.equipmentId))
-        throw Error(
-          "Equipamento já existe sem vínculo com esta origem; não será associado ou sobrescrito automaticamente",
-        );
       if (
         link &&
         entity.version !== link.appliedVersion &&
@@ -451,9 +620,15 @@ async function references(
 ) {
   const target = source.target as Target,
     data = row.data;
-  let equipment = await tx.equipment.findUnique({
-    where: { id: data.equipmentId },
-  });
+  let equipment =
+    target === "EQUIPMENT"
+      ? null
+      : await tx.equipment.findUnique({ where: { id: data.equipmentId } });
+  if (equipment?.deletedAt)
+    throw new HttpError(
+      409,
+      "Equipamento excluído após a prévia. Gere outra prévia.",
+    );
   let sectorId = equipment?.sectorId;
   if (target === "EQUIPMENT" || !equipment) {
     if (data.sector) {
@@ -489,16 +664,31 @@ async function references(
   if (!equipment && target !== "EQUIPMENT") {
     if (!o.createReferences)
       throw new HttpError(409, "Equipamento ainda não cadastrado");
-    equipment = await tx.equipment.create({
-      data: {
-        id: data.equipmentId,
-        name: data.equipmentId,
-        sectorId: sectorId!,
-        criticality: data.criticality ?? o.defaultCriticality!,
-        status: "UNKNOWN",
-        isDemo: source.isDemo,
-      },
+    const tag = tagSchema.parse(data.referenceTag || data.equipmentId);
+    equipment = await tx.equipment.findFirst({
+      where: { tag, sectorId: sectorId! },
     });
+    if (equipment?.deletedAt)
+      throw new HttpError(
+        409,
+        "Equipamento excluído. Restaure antes de importar.",
+      );
+    if (!equipment)
+      equipment = await tx.equipment.create({
+        data: {
+          id: (await tx.equipment.findUnique({
+            where: { id: data.equipmentId },
+          }))
+            ? "EQ-" + randomUUID()
+            : data.equipmentId,
+          tag,
+          name: data.referenceTag || data.equipmentId,
+          sectorId: sectorId!,
+          criticality: data.criticality ?? o.defaultCriticality!,
+          status: "UNKNOWN",
+          isDemo: source.isDemo,
+        },
+      });
     await journal(
       tx,
       batchId,
@@ -549,7 +739,11 @@ async function references(
     if (!technician.active) throw new HttpError(409, "Técnico inativo");
     technicianId = technician.id;
   }
-  return { equipmentId: data.equipmentId, sectorId, technicianId };
+  return {
+    equipmentId: equipment?.id || data.equipmentId,
+    sectorId,
+    technicianId,
+  };
 }
 export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
   return db.$transaction(
@@ -576,6 +770,14 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           "Gere e confirme uma prévia antes de importar",
         );
       const payload = batch.payload as any;
+      if (
+        batch.sourceConfig?.target === "EQUIPMENT" &&
+        payload?.formatVersion !== 2
+      )
+        throw new HttpError(
+          409,
+          "A regra de TAG mudou. Envie o arquivo e gere uma nova prévia.",
+        );
       if (!payload?.confirmed)
         throw new HttpError(409, "Confirme a prévia antes de continuar");
       const source = must(batch.sourceConfig);
@@ -601,6 +803,10 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           counts.duplicates++;
           continue;
         }
+        if (row.action === "GROUPED") {
+          counts.grouped = (counts.grouped || 0) + 1;
+          continue;
+        }
         if (row.action === "SKIP") {
           counts.unchanged++;
           continue;
@@ -620,6 +826,11 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
                 where: { id: link.entityId },
               })
             : null;
+        if (target === "EQUIPMENT" && current?.deletedAt)
+          throw new HttpError(
+            409,
+            "Cadastro excluído após a prévia. Restaure ou gere outra prévia.",
+          );
         if (
           (row.action === "CREATE" && link) ||
           (row.action === "UPDATE" &&
@@ -701,7 +912,11 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
         } else {
           const entityId =
             target === "EQUIPMENT"
-              ? String(row.data.equipmentId)
+              ? (await tx.equipment.findUnique({
+                  where: { id: String(row.data.equipmentId) },
+                }))
+                ? "EQ-" + randomUUID()
+                : String(row.data.equipmentId)
               : "IMP-" + target.slice(0, 3) + "-" + randomUUID().slice(0, 12);
           after = await delegate.create({
             data: { ...data, id: entityId, isDemo: source.isDemo },

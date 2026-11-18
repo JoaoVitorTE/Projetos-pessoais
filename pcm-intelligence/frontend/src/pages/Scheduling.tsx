@@ -5,6 +5,7 @@ import { Empty, State } from "../components/OperationalUI";
 import {
   query,
   canPlan,
+  equipmentCode,
   typeLabel,
   statusLabel,
   priorities,
@@ -350,7 +351,7 @@ export function SchedulingPage({
                               <span>
                                 {clock(a.startsAt)}–{clock(a.endsAt)}
                               </span>
-                              <b>{a.equipmentId}</b>
+                              <b>{equipmentCode(a.equipment)}</b>
                               <span>
                                 {a.kind === "ORDER" ? "OS" : "Plano"} ·{" "}
                                 {a.reference}
@@ -488,7 +489,7 @@ export function SchedulingPage({
                             >
                               <div className="action-row">
                                 <strong>
-                                  {p.reference} · {p.equipmentId}
+                                  {p.reference} · {equipmentCode(p.equipment)}
                                 </strong>
                                 <span className="score">{p.score} pontos</span>
                               </div>
@@ -558,7 +559,7 @@ export function SchedulingPage({
                           <tr key={t.kind + t.id}>
                             <td>
                               <b>
-                                {t.reference} · {t.equipmentId}
+                                {t.reference} · {equipmentCode(t.equipment)}
                               </b>
                               <small>{t.title}</small>
                             </td>

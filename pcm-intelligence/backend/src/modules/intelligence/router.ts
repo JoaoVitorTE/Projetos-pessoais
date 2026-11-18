@@ -1,3 +1,4 @@
+import { equipmentCaption } from "../operations/equipment-identity.js";
 import { Router } from "express";
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
@@ -64,8 +65,10 @@ export async function preventiveReport(db: PrismaClient, q: any) {
   const items = [
     ...plans.map((p) => ({
       id: p.id,
+      equipmentId: p.equipmentId,
       kind: "Plano",
-      equipment: p.equipmentId,
+      equipment:
+        equipmentCaption(p.equipment) + " · " + p.equipment.sector.name,
       sector: p.equipment.sector.name,
       type: p.type === "LUBRICATION" ? "Lubrificação" : "Preventiva",
       description: p.title,
@@ -76,8 +79,10 @@ export async function preventiveReport(db: PrismaClient, q: any) {
     })),
     ...orders.map((o) => ({
       id: o.sapReference || o.id,
+      equipmentId: o.equipmentId,
       kind: "OS local",
-      equipment: o.equipmentId,
+      equipment:
+        equipmentCaption(o.equipment) + " · " + o.equipment.sector.name,
       sector: o.equipment.sector.name,
       type: o.type === "LUBRICATION" ? "Lubrificação" : "Preventiva",
       description: o.description,

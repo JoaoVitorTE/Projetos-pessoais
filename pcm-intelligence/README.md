@@ -1,4 +1,4 @@
-# PCM Intelligence — Experiência e treinamento (v0.5)
+# PCM Intelligence — Equipamentos e listas de tarefas (v0.6)
 
 MVP operacional de manutenção industrial com frontend React, API Express/Prisma, PostgreSQL Neon, autenticação e cinco perfis. Opera com cadastros locais e arquivos exportados autorizados; mantém modo de demonstração separado. Sem conexão direta SAP/SKA e sem comandos industriais.
 
@@ -7,6 +7,8 @@ Disponível: dashboard calculado; equipamentos; interrupções e recorrência de
 Disponível nesta versão: importação CSV/XLSX com prévia, mapeamento, repetidos, atualização, conflitos e reversão; relatório preventivo PDF/Excel; Assistente PCM estruturado; alertas de prazo; cadastros de usuários/técnicos/setores e auditoria pesquisável. Consulte [uso diário, permissões e limites](docs/IMPORTS-AND-CONTROL.md) e [regras operacionais](docs/PHASE2.md). Nova etapa: [Agenda inteligente](docs/SCHEDULING.md), com visões semanal/mensal, jornadas e ausências configuráveis, conflitos, execução por etapas e propostas explicáveis para revisão humana. Sincronização SAP automática, ar comprimido na interface, análises estatísticas avançadas e modelos preditivos continuam futuros.
 
 Nova experiência: página inicial com alertas e atalhos, cabeçalho suspenso por seções, menu hambúrguer, logo e ícones, cadastro guiado de usuários e tutorial persistido por conta. Consulte [experiência e treinamento](docs/EXPERIENCE.md) e o [manual em PDF](frontend/public/docs/manual-pcm-intelligence.pdf). Endereço principal: https://pcm-intelligence.vercel.app. A mesma senha de cada conta continua válida.
+
+Nova versão: TAG obrigatória por setor, número opcional, exclusão/restauração com histórico e importação conjunta de preventivas, lubrificação e tarefas. Consulte [identificação e importação de tarefas](docs/EQUIPMENT-AND-TASKS.md).
 
 ## Execução local no Windows (PowerShell)
 
@@ -62,7 +64,7 @@ npm test
 
 Na primeira linha, substitua o nome do container se seu Compose usar outro nome (`docker compose ps`). `SEED_SHARED_TEST_PASSWORD=true` só tem efeito com `NODE_ENV=test`: permite testar os cinco perfis com a senha do arquivo de testes. Não use em produção.
 
-Os 116 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
+Os 138 testes cobrem agenda, jornadas, conflitos simultâneos, execução parcial/final, permissões e sincronização com OS/planos/importação, além de importação CSV/XLSX e repetidos, atualizações, conflitos/reversão, referências criadas, administração, assistente, PDF/Excel, além de fluxos operacionais, permissões, histórico, concorrência, calendário, conferência documental, indicadores e login, autorização dos cinco perfis, auditoria, cookies, logout, expiração, contagens, senha obrigatória, alteração de senha, invalidação de sessões e limite persistente de tentativas.
 
 ## Estrutura
 

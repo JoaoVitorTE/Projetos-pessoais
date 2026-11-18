@@ -63,6 +63,8 @@ export const serviceTransitions: Record<string, string[]> = {
 export const filters = z
   .object({
     q: z.string().trim().max(120).optional(),
+    deleted:z.enum(["true","false","all"]).optional(),
+    tagMissing:z.enum(["true","false"]).optional(),
     sectorId: z.string().max(100).optional(),
     equipmentId: z.string().max(100).optional(),
     criticality: z.coerce.number().int().min(1).max(3).optional(),

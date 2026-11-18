@@ -13,6 +13,7 @@ import {
 } from "../components/OperationalUI";
 import {
   canPlan,
+  equipmentCode,
   fmt,
   localDate,
   query,
@@ -119,7 +120,10 @@ export function InterruptionsPage({
               {data.data.items.map((i) => (
                 <tr key={i.id}>
                   <td className="code">
-                    {i.equipmentId}
+                    {equipmentCode(
+                      i.equipment ||
+                        lookups.equipment.find((e) => e.id === i.equipmentId),
+                    )}
                     <small>{i.equipment?.name}</small>
                   </td>
                   <td>{fmt(i.startedAt)}</td>
@@ -173,7 +177,10 @@ export function InterruptionsPage({
                 {recurrence.data.items.slice(0, 9).map((i) => (
                   <article key={i.equipmentId + i.reason}>
                     <strong>
-                      {i.equipmentId} · {i.occurrences} ocorrências
+                      {equipmentCode(
+                        lookups.equipment.find((e) => e.id === i.equipmentId),
+                      )}{" "}
+                      · {i.occurrences} ocorrências
                     </strong>
                     <p>
                       {i.reason} · {i.days} dias distintos

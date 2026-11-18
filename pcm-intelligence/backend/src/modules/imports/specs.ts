@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { fromZonedTime } from "date-fns-tz";
+import { tagSchema } from "../operations/equipment-identity.js";
+import { taskSchema } from "../operations/plan-tasks.js";
 import { createHash } from "node:crypto";
 import { HttpError } from "../operations/helpers.js";
 export const targets = [
@@ -16,10 +18,10 @@ export const fields: Record<
   EQUIPMENT: [
     {
       key: "externalKey",
-      label: "Identificador externo (equipamento)",
-      required: true,
+      label: "Chave externa (opcional; padrão TAG + setor)",
     },
-    { key: "equipmentId", label: "Código do equipamento", required: true },
+    { key: "equipmentId", label: "TAG do equipamento", required: true },
+    { key: "equipmentNumber", label: "Número do equipamento (opcional)" },
     { key: "name", label: "Nome do equipamento" },
     { key: "sector", label: "Nome do setor" },
     { key: "criticality", label: "Criticidade", kind: "priority" },
@@ -27,7 +29,11 @@ export const fields: Record<
   ],
   ORDERS: [
     { key: "externalKey", label: "Número externo da OS", required: true },
-    { key: "equipmentId", label: "Código do equipamento", required: true },
+    {
+      key: "equipmentId",
+      label: "TAG ou número do equipamento",
+      required: true,
+    },
     { key: "description", label: "Descrição" },
     { key: "type", label: "Tipo de manutenção", kind: "orderType" },
     { key: "status", label: "Status da OS", kind: "orderStatus" },
@@ -37,7 +43,7 @@ export const fields: Record<
     { key: "scheduledAt", label: "Data programada / vencimento", kind: "date" },
     { key: "completedAt", label: "Data de conclusão", kind: "date" },
     { key: "notes", label: "Observações" },
-    { key: "sector", label: "Setor (para novos equipamentos)" },
+    { key: "sector", label: "Setor do equipamento" },
     {
       key: "criticality",
       label: "Criticidade (para novos equipamentos)",
@@ -50,8 +56,25 @@ export const fields: Record<
       label: "Identificador externo do plano",
       required: true,
     },
-    { key: "equipmentId", label: "Código do equipamento", required: true },
+    {
+      key: "equipmentId",
+      label: "TAG ou número do equipamento",
+      required: true,
+    },
     { key: "title", label: "Nome do plano" },
+    {
+      key: "taskListReference",
+      label: "Referência da lista de tarefas (opcional)",
+    },
+    { key: "taskCode", label: "Código da tarefa / operação (opcional)" },
+    {
+      key: "taskDescription",
+      label: "Descrição da tarefa / operação (opcional)",
+    },
+    {
+      key: "estimatedMinutes",
+      label: "Minutos estimados da tarefa (opcional)",
+    },
     { key: "type", label: "Preventiva ou lubrificação", kind: "planType" },
     { key: "intervalDays", label: "Periodicidade em dias" },
     {
@@ -62,7 +85,7 @@ export const fields: Record<
     },
     { key: "technician", label: "Nome do técnico", required: true },
     { key: "active", label: "Plano ativo", kind: "boolean" },
-    { key: "sector", label: "Setor (para novos equipamentos)" },
+    { key: "sector", label: "Setor do equipamento" },
     {
       key: "criticality",
       label: "Criticidade (para novos equipamentos)",
@@ -75,7 +98,11 @@ export const fields: Record<
       label: "Identificador externo da ocorrência",
       required: true,
     },
-    { key: "equipmentId", label: "Código do equipamento", required: true },
+    {
+      key: "equipmentId",
+      label: "TAG ou número do equipamento",
+      required: true,
+    },
     { key: "startedAt", label: "Início", required: true, kind: "date" },
     { key: "endedAt", label: "Término", kind: "date" },
     {
@@ -85,7 +112,7 @@ export const fields: Record<
     },
     { key: "reason", label: "Motivo informado", required: true },
     { key: "description", label: "Descrição" },
-    { key: "sector", label: "Setor (para novos equipamentos)" },
+    { key: "sector", label: "Setor do equipamento" },
     {
       key: "criticality",
       label: "Criticidade (para novos equipamentos)",
@@ -247,11 +274,13 @@ export function normalizeRow(
         continue;
       }
       const maxLength =
-        spec.key === "reason"
-          ? 160
-          : ["name", "title", "sector", "technician"].includes(spec.key)
-            ? 120
-            : 2000;
+        spec.key === "taskDescription"
+          ? 1000
+          : spec.key === "reason"
+            ? 160
+            : ["name", "title", "sector", "technician"].includes(spec.key)
+              ? 120
+              : 2000;
       if (value.length > maxLength || value.includes("\0"))
         throw Error("Conteúdo inválido ou muito longo: " + spec.label);
       if (spec.kind === "date") data[spec.key] = parseDate(value, o);
@@ -273,6 +302,17 @@ export function normalizeRow(
       } else data[spec.key] = value;
     }
     externalKey = String(data.externalKey || "");
+    if (target === "EQUIPMENT") {
+      data.tag = tagSchema.parse(data.equipmentId);
+      data.equipmentId = data.tag;
+      if (!externalKey)
+        externalKey = JSON.stringify([
+          data.tag,
+          String(data.sector || o.defaultSectorId || "")
+            .trim()
+            .toUpperCase(),
+        ]);
+    }
     if (o.secondKeyColumn) {
       const second = read(o.secondKeyColumn);
       if (!second) throw Error("Segunda parte da chave está vazia");
@@ -280,6 +320,24 @@ export function normalizeRow(
     }
     if (externalKey.length > 512) throw Error("Chave externa muito longa");
     delete data.externalKey;
+    if (
+      target === "PLANS" &&
+      (data.taskCode || data.taskDescription || data.estimatedMinutes)
+    ) {
+      const duration = data.estimatedMinutes
+        ? Number(String(data.estimatedMinutes).replace(",", "."))
+        : null;
+      data.tasks = [
+        taskSchema.parse({
+          code: data.taskCode || "",
+          description: data.taskDescription || "",
+          estimatedMinutes: duration,
+        }),
+      ];
+    }
+    delete data.taskCode;
+    delete data.taskDescription;
+    delete data.estimatedMinutes;
     if (data.equipmentId && String(data.equipmentId).length > 100)
       throw Error("Código de equipamento muito longo");
     if (

@@ -24,7 +24,7 @@ A listagem de contas inicia em Ativos e permite pesquisar nome/e-mail, situaçã
 
 Após a troca obrigatória da senha temporária, usuários sem preferência registrada recebem uma apresentação de seis etapas. Concluir ou escolher Fazer depois salva a versão no próprio usuário e audita a decisão. O botão X fecha apenas a apresentação atual. A primeira conclusão é preservada ao rever o tutorial.
 
-Suporte → Central de ajuda permite rever a apresentação, pesquisar procedimentos por palavra/categoria e baixar o manual de treinamento de 17 páginas. O manual inclui perfis, procedimentos e exercícios e contém apenas orientações públicas, sem dados de contas ou registros operacionais.
+Suporte → Central de ajuda permite rever a apresentação, pesquisar procedimentos por palavra/categoria e baixar o manual de treinamento (19 páginas na versão 0.6). O manual inclui perfis, procedimentos e exercícios e contém apenas orientações públicas, sem dados de contas ou registros operacionais.
 
 Fonte única do treinamento: `training/guide.json`. Gere novamente o PDF com `npm run docs:build`; `npm run build` também o gera. Arquivo publicado: `/docs/manual-pcm-intelligence.pdf`. As fontes DejaVu redistribuídas estão em `training/fonts`, com licença; elas garantem os acentos e símbolos no PDF sem downloads durante a geração.
 

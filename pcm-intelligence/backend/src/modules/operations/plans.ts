@@ -25,6 +25,8 @@ import {
   run,
   updated,
 } from "./helpers.js";
+import { assertActiveEquipment } from "./equipment-identity.js";
+import { tasksSchema } from "./plan-tasks.js";
 const body = z
   .object({
     title: z.string().trim().min(3).max(160),
@@ -34,6 +36,8 @@ const body = z
     intervalDays: z.number().int().min(1).max(3660),
     nextExecution: date,
     active: z.boolean(),
+    taskListReference: z.string().trim().max(120).nullable().optional(),
+    tasks: tasksSchema.optional(),
   })
   .strict();
 export function plansRouter(db: PrismaClient) {
@@ -105,6 +109,8 @@ export function plansRouter(db: PrismaClient) {
       requireRole(res, planners);
       const data = body.parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
+        await assertActiveEquipment(tx, data.equipmentId);
         const row = await tx.maintenancePlan.create({
           data: {
             ...data,
@@ -130,6 +136,7 @@ export function plansRouter(db: PrismaClient) {
         const before = must(
           await tx.maintenancePlan.findUnique({ where: { id: req.params.id } }),
         );
+        await assertActiveEquipment(tx, data.equipmentId);
         await guardReservedTarget(tx, "PLAN", before.id, before, data);
         updated(
           await tx.maintenancePlan.updateMany({

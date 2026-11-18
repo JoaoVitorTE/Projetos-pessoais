@@ -1,6 +1,6 @@
 import { useEffect, useRef, useId, type ReactNode } from "react";
 import type { Lookups } from "../types/operations";
-import { priorities, statusLabel } from "../types/operations";
+import { priorities, statusLabel, equipmentCode } from "../types/operations";
 export function Modal({
   title,
   onClose,
@@ -153,7 +153,10 @@ export function FleetFilters({
             .filter((x) => !value.sectorId || x.sectorId === value.sectorId)
             .map((x) => (
               <option key={x.id} value={x.id}>
-                {x.id} · {x.name}
+                {equipmentCode(x)} ·{" "}
+                {x.sectorId &&
+                  lookups.sectors.find((s) => s.id === x.sectorId)?.name}{" "}
+                · {x.name}
               </option>
             ))}
         </select>
@@ -197,7 +200,10 @@ export function EquipmentSelect({
         <option value="">Selecione</option>
         {lookups.equipment.map((x) => (
           <option key={x.id} value={x.id}>
-            {x.id} · {x.name}
+            {equipmentCode(x)} ·{" "}
+            {x.sectorId &&
+              lookups.sectors.find((s) => s.id === x.sectorId)?.name}{" "}
+            · {x.name}
           </option>
         ))}
       </select>

@@ -114,6 +114,7 @@ export function OperationalShell({
         {tab === "home" ? (
           <HomePage
             user={user}
+            lookups={lookups.data || undefined}
             {...home}
             onRefresh={home.refresh}
             onNavigate={navigate}
@@ -211,7 +212,7 @@ export function OperationalShell({
         )}
         <footer className="workspace-footer">
           <span>
-            PCM Intelligence <small>v0.5</small>
+            PCM Intelligence <small>v0.6</small>
           </span>
           <span>Planejar com clareza. Executar com controle.</span>
         </footer>

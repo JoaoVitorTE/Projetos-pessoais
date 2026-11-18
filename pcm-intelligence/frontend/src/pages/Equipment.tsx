@@ -1,4 +1,13 @@
 import { useState, useEffect } from "react";
+import {
+  Plus,
+  Trash2,
+  RotateCcw,
+  History,
+  Tag,
+  Info,
+  Check,
+} from "lucide-react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
 import {
@@ -20,6 +29,8 @@ import {
   type Page,
   type User,
   statusLabel,
+  fmt,
+  equipmentCode,
 } from "../types/operations";
 export function EquipmentPage({
   user,
@@ -36,47 +47,153 @@ export function EquipmentPage({
     [status, setStatus] = useState(""),
     [page, setPage] = useState(1),
     [edit, setEdit] = useState<Equipment | null | undefined>(),
-    [notice, setNotice] = useState("");
-  useEffect(() => setPage(1), [search]);
-  const data = useResource<Page<Equipment>>(
-    "/equipment?" + query({ ...fleet, status, q: search, page }),
+    [notice, setNotice] = useState(""),
+    [deleted, setDeleted] = useState(false),
+    [pending, setPending] = useState(false),
+    [selected, setSelected] = useState<Map<string, Equipment>>(new Map()),
+    [removing, setRemoving] = useState<Equipment[] | null>(null),
+    [restoring, setRestoring] = useState<Equipment | null>(null),
+    [history, setHistory] = useState<Equipment | null>(null);
+  useEffect(() => {
+    setPage(1);
+    setSelected(new Map());
+  }, [
+    search,
+    deleted,
+    pending,
+    fleet.sectorId,
+    fleet.equipmentId,
+    fleet.criticality,
+    status,
+  ]);
+  const data = useResource<Page<Equipment> & { pendingTags: number }>(
+    "/equipment?" +
+      query({
+        ...fleet,
+        status,
+        q: search,
+        page,
+        deleted: String(deleted),
+        tagMissing: pending ? "true" : "",
+      }),
   );
+  const change = () => {
+    data.refresh();
+    onChanged();
+    setSelected(new Map());
+  };
+  const toggle = (e: Equipment) =>
+    setSelected((current) => {
+      const next = new Map(current);
+      if (next.has(e.id)) next.delete(e.id);
+      else next.set(e.id, e);
+      return next;
+    });
   return (
     <>
+      <section className="equipment-intro">
+        <span>
+          <Tag size={23} />
+        </span>
+        <div>
+          <h2>A TAG identifica o equipamento no setor.</h2>
+          <p>
+            Informe a TAG e o setor. O número do equipamento é opcional e pode
+            ser preenchido depois.
+          </p>
+        </div>
+      </section>
       <div className="action-row">
-        <p>Cadastro de equipamentos e sua situação informada.</p>
-        {canPlan(user) && (
-          <button onClick={() => setEdit(null)}>Cadastrar equipamento</button>
+        <p>
+          {deleted
+            ? "Cadastros excluídos ficam disponíveis para consulta e restauração."
+            : "Cadastre, corrija ou exclua equipamentos com rastreabilidade."}
+        </p>
+        {canPlan(user) && !deleted && (
+          <button onClick={() => setEdit(null)}>
+            <Plus size={16} />
+            Cadastrar equipamento
+          </button>
         )}
       </div>
-      <div className="filters">
-        <FleetFilters
-          value={fleet}
-          onChange={(v) => {
-            setFleet(v);
-            setPage(1);
+      <div className="tabs">
+        <button
+          className={!deleted ? "" : "secondary"}
+          onClick={() => {
+            setDeleted(false);
+            setPending(false);
           }}
-          lookups={lookups}
-        />
+        >
+          Cadastrados
+        </button>
+        <button
+          className={deleted ? "" : "secondary"}
+          onClick={() => {
+            setDeleted(true);
+            setPending(false);
+          }}
+        >
+          <Trash2 size={15} />
+          Excluídos
+        </button>
+      </div>
+      {data.data !== null && data.data.pendingTags > 0 && !deleted && (
+        <div className="equipment-pending">
+          <Info size={19} />
+          <div>
+            <b>
+              {data.data.pendingTags} cadastros anteriores precisam de
+              conferência da TAG.
+            </b>
+            <p>
+              Use Editar ou reimporte o arquivo na mesma origem, mapeando TAG e
+              número separadamente. As referências antigas foram preservadas.
+            </p>
+          </div>
+          <button
+            className="secondary small"
+            onClick={() => setPending(!pending)}
+          >
+            {pending ? "Mostrar todos" : "Ver TAGs pendentes"}
+          </button>
+        </div>
+      )}
+      <div className="filters">
+        <FleetFilters value={fleet} onChange={setFleet} lookups={lookups} />
         <label>
           Situação
           <select
             aria-label="Situação"
             value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Todas</option>
             {["UNKNOWN", "RUNNING", "STOPPED", "MAINTENANCE"].map((x) => (
-              <option value={x} key={x}>
+              <option key={x} value={x}>
                 {statusLabel[x]}
               </option>
             ))}
           </select>
         </label>
       </div>
+      {selected.size > 0 && !deleted && (
+        <div className="selection-bar">
+          <span>{selected.size} equipamentos selecionados</span>
+          <button
+            className="secondary small"
+            onClick={() => setSelected(new Map())}
+          >
+            Limpar seleção
+          </button>
+          <button
+            className="danger-button small"
+            onClick={() => setRemoving([...selected.values()])}
+          >
+            <Trash2 size={14} />
+            Excluir selecionados
+          </button>
+        </div>
+      )}
       {notice && (
         <p role="status" className="success">
           {notice}
@@ -88,40 +205,119 @@ export function EquipmentPage({
           <table>
             <thead>
               <tr>
+                {canPlan(user) && !deleted && (
+                  <th>
+                    <input
+                      type="checkbox"
+                      aria-label="Selecionar todos da página"
+                      checked={
+                        !!data.data.items.length &&
+                        data.data.items.every((e) => selected.has(e.id))
+                      }
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSelected((current) => {
+                          const next = new Map(current);
+                          for (const row of data.data!.items) {
+                            if (checked) next.set(row.id, row);
+                            else next.delete(row.id);
+                          }
+                          return next;
+                        });
+                      }}
+                    />
+                  </th>
+                )}
                 {[
-                  "Código",
+                  "TAG",
+                  "Número do equipamento",
                   "Equipamento",
                   "Setor",
                   "Criticidade",
-                  "Situação",
+                  deleted ? "Excluído em" : "Situação",
                   "Ações",
-                ].map((x) => (
-                  <th key={x}>{x}</th>
+                ].map((h) => (
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {data.data.items.map((e) => (
                 <tr key={e.id}>
-                  <td className="code">{e.id}</td>
+                  {canPlan(user) && !deleted && (
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label={
+                          "Selecionar " +
+                          equipmentCode(e) +
+                          " · " +
+                          e.sector?.name
+                        }
+                        checked={selected.has(e.id)}
+                        onChange={() => toggle(e)}
+                      />
+                    </td>
+                  )}
+                  <td className="code">
+                    {e.tag || (
+                      <span className="pending-tag">
+                        TAG pendente<small>Ref. anterior: {e.id}</small>
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {e.equipmentNumber || (
+                      <span className="muted">Não informado</span>
+                    )}
+                  </td>
                   <td>{e.name}</td>
                   <td>{e.sector?.name}</td>
                   <td>
                     <Priority value={e.criticality} />
                   </td>
                   <td>
-                    <Badge status={e.status} />
+                    {deleted ? fmt(e.deletedAt) : <Badge status={e.status} />}
                   </td>
                   <td>
-                    {canPlan(user) && (
+                    <div className="row-actions">
+                      {canPlan(user) &&
+                        (!deleted ? (
+                          <>
+                            <button
+                              className="small secondary"
+                              onClick={() => setEdit(e)}
+                              aria-label={"Editar " + equipmentCode(e)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="small secondary danger-text"
+                              onClick={() => setRemoving([e])}
+                              aria-label={"Excluir " + equipmentCode(e)}
+                            >
+                              <Trash2 size={13} />
+                              Excluir
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="small secondary"
+                            onClick={() => setRestoring(e)}
+                          >
+                            <RotateCcw size={13} />
+                            Restaurar
+                          </button>
+                        ))}
                       <button
                         className="small secondary"
-                        onClick={() => setEdit(e)}
-                        aria-label={"Editar " + e.id}
+                        aria-label={"Histórico de " + equipmentCode(e)}
+                        onClick={() => setHistory(e)}
                       >
-                        Editar
+                        <History size={13} />
+                        Histórico
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -139,9 +335,41 @@ export function EquipmentPage({
           onSaved={() => {
             setEdit(undefined);
             setNotice("Equipamento salvo com auditoria.");
-            data.refresh();
-            onChanged();
+            change();
           }}
+        />
+      )}
+      {removing && (
+        <EquipmentRemoval
+          rows={removing}
+          onClose={() => setRemoving(null)}
+          onSaved={() => {
+            setNotice(
+              removing.length +
+                " cadastro(s) excluído(s). Você pode restaurar na aba Excluídos.",
+            );
+            setRemoving(null);
+            setPage(1);
+            change();
+          }}
+        />
+      )}
+      {restoring && (
+        <EquipmentRemoval
+          rows={[restoring]}
+          restore
+          onClose={() => setRestoring(null)}
+          onSaved={() => {
+            setRestoring(null);
+            setNotice("Equipamento restaurado com auditoria.");
+            change();
+          }}
+        />
+      )}
+      {history && (
+        <EquipmentHistory
+          equipment={history}
+          onClose={() => setHistory(null)}
         />
       )}
     </>
@@ -158,15 +386,14 @@ function EquipmentForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState(
-      initial || {
-        id: "",
-        name: "",
-        sectorId: "",
-        criticality: 2,
-        status: "UNKNOWN",
-      },
-    ),
+  const [form, setForm] = useState({
+      tag: initial?.tag || "",
+      equipmentNumber: initial?.equipmentNumber || "",
+      name: initial?.name || "",
+      sectorId: initial?.sectorId || "",
+      criticality: initial?.criticality || 2,
+      status: initial?.status || "UNKNOWN",
+    }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
@@ -181,22 +408,16 @@ function EquipmentForm({
           setBusy(true);
           setError("");
           try {
-            const body = {
-              name: form.name,
-              sectorId: form.sectorId,
-              criticality: form.criticality,
-              status: form.status,
-            };
             await api(
               "/equipment" +
                 (initial ? "/" + encodeURIComponent(initial.id) : ""),
               {
                 method: initial ? "PATCH" : "POST",
-                body: JSON.stringify(
-                  initial
-                    ? { ...body, version: initial.version }
-                    : { ...body, id: form.id },
-                ),
+                body: JSON.stringify({
+                  ...form,
+                  equipmentNumber: form.equipmentNumber.trim() || null,
+                  ...(initial ? { version: initial.version } : {}),
+                }),
               },
             );
             onSaved();
@@ -207,22 +428,39 @@ function EquipmentForm({
           }
         }}
       >
+        <p className="form-guidance span-2">
+          Uma TAG pode repetir em setores diferentes. Dentro do mesmo setor,
+          cada equipamento tem sua própria TAG.
+        </p>
         <label>
-          Código
+          TAG · obrigatória
           <input
-            aria-label="Código"
+            aria-label="TAG"
             required
-            disabled={!!initial}
-            pattern="[A-Z0-9][A-Z0-9-]{2,39}"
-            placeholder="EQ-031"
-            value={form.id}
+            maxLength={80}
+            placeholder="Ex.: 0011"
+            value={form.tag}
             onChange={(e) =>
-              setForm({ ...form, id: e.target.value.toUpperCase() })
+              setForm({ ...form, tag: e.target.value.toUpperCase() })
             }
           />
+          <small>Zeros à esquerda são preservados.</small>
         </label>
         <label>
-          Nome
+          Número do equipamento · opcional
+          <input
+            aria-label="Número do equipamento"
+            maxLength={80}
+            placeholder="Preencha se houver número no SAP"
+            value={form.equipmentNumber}
+            onChange={(e) =>
+              setForm({ ...form, equipmentNumber: e.target.value })
+            }
+          />
+          <small>Pode ficar em branco.</small>
+        </label>
+        <label className="span-2">
+          Nome do equipamento
           <input
             aria-label="Nome"
             required
@@ -233,7 +471,7 @@ function EquipmentForm({
           />
         </label>
         <label>
-          Setor
+          Setor · obrigatório
           <select
             aria-label="Setor"
             required
@@ -242,7 +480,7 @@ function EquipmentForm({
           >
             <option value="">Selecione</option>
             {lookups.sectors.map((x) => (
-              <option value={x.id} key={x.id}>
+              <option key={x.id} value={x.id}>
                 {x.name}
               </option>
             ))}
@@ -278,17 +516,204 @@ function EquipmentForm({
             ))}
           </select>
         </label>
+        {!lookups.sectors.length && (
+          <p className="error span-2">
+            Cadastre um setor em Gestão → Cadastros e acessos antes de salvar.
+          </p>
+        )}
         <div className="form-bottom">
           {error && (
             <p role="alert" className="error">
               {error}
             </p>
           )}
-          <button disabled={busy}>
-            {busy ? "Salvando…" : "Salvar equipamento"}
+          <div className="wizard-actions">
+            <button type="button" className="secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button disabled={busy}>
+              {busy ? "Salvando…" : "Salvar equipamento"}
+              <Check size={16} />
+            </button>
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+function EquipmentRemoval({
+  rows,
+  restore = false,
+  onClose,
+  onSaved,
+}: {
+  rows: Equipment[];
+  restore?: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [reason, setReason] = useState(""),
+    [confirmation, setConfirmation] = useState(""),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  return (
+    <Modal
+      title={
+        restore ? "Restaurar equipamento" : "Excluir cadastros de equipamentos"
+      }
+      onClose={onClose}
+    >
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!restore && confirmation !== "EXCLUIR") return;
+          setBusy(true);
+          setError("");
+          try {
+            if (restore)
+              await api(
+                "/equipment/" + encodeURIComponent(rows[0].id) + "/restore",
+                {
+                  method: "POST",
+                  body: JSON.stringify({ version: rows[0].version, reason }),
+                },
+              );
+            else
+              await api("/equipment/bulk-delete", {
+                method: "POST",
+                body: JSON.stringify({
+                  items: rows.map(({ id, version }) => ({ id, version })),
+                  reason,
+                }),
+              });
+            onSaved();
+          } catch (e) {
+            setError((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <p>
+          {restore
+            ? "O equipamento voltará ao cadastro e às opções de seleção."
+            : "Os equipamentos sairão do cadastro disponível e dos indicadores ativos. O histórico será preservado, e a restauração ficará na aba Excluídos."}
+        </p>
+        <ul className="removal-items">
+          {rows.slice(0, 8).map((r) => (
+            <li key={r.id}>
+              <strong>{equipmentCode(r)}</strong>
+              <span>
+                {r.name} · {r.sector?.name}
+              </span>
+            </li>
+          ))}
+          {rows.length > 8 && (
+            <li>Mais {rows.length - 8} equipamentos selecionados.</li>
+          )}
+        </ul>
+        {!restore && (
+          <p className="form-guidance">
+            OS abertas, planos ativos ou interrupções abertas precisam ser
+            regularizados antes da exclusão.
+          </p>
+        )}
+        <label>
+          Motivo
+          <textarea
+            aria-label="Motivo da alteração"
+            required
+            minLength={3}
+            maxLength={500}
+            placeholder={
+              restore
+                ? "Por que o cadastro deve voltar?"
+                : "Ex.: cadastro importado com identificação incorreta"
+            }
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </label>
+        {!restore && (
+          <label>
+            Digite EXCLUIR para confirmar
+            <input
+              aria-label="Confirmação de exclusão"
+              required
+              pattern="EXCLUIR"
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+            />
+          </label>
+        )}
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        <div className="wizard-actions">
+          <button
+            className="secondary"
+            type="button"
+            disabled={busy}
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            className={restore ? "" : "danger-button"}
+            disabled={busy || (!restore && confirmation !== "EXCLUIR")}
+          >
+            {busy
+              ? "Salvando…"
+              : restore
+                ? "Restaurar equipamento"
+                : "Excluir " + rows.length + " equipamento(s)"}
           </button>
         </div>
       </form>
+    </Modal>
+  );
+}
+function EquipmentHistory({
+  equipment,
+  onClose,
+}: {
+  equipment: Equipment;
+  onClose: () => void;
+}) {
+  const data = useResource<
+    {
+      id: string;
+      action: string;
+      createdAt: string;
+      user: { name: string } | null;
+      metadata: { reason?: string };
+    }[]
+  >("/equipment/" + encodeURIComponent(equipment.id) + "/history");
+  const labels: Record<string, string> = {
+    EQUIPMENT_CREATED: "Cadastro criado",
+    EQUIPMENT_UPDATED: "Cadastro alterado",
+    EQUIPMENT_DELETED: "Cadastro excluído",
+    EQUIPMENT_RESTORED: "Cadastro restaurado",
+    IMPORT_APPLIED: "Importação aplicada",
+    IMPORT_REVERTED: "Importação desfeita",
+  };
+  return (
+    <Modal title={"Histórico · " + equipmentCode(equipment)} onClose={onClose}>
+      <State {...data} />
+      <ol className="timeline">
+        {data.data?.map((r) => (
+          <li key={r.id}>
+            <strong>{labels[r.action] || r.action}</strong>
+            <p>
+              {fmt(r.createdAt)} · {r.user?.name || "Sistema"}
+            </p>
+            {r.metadata.reason && <p>{r.metadata.reason}</p>}
+          </li>
+        ))}
+      </ol>
+      {data.data?.length === 0 && <Empty />}
     </Modal>
   );
 }

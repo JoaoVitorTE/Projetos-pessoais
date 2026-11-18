@@ -24,9 +24,21 @@ import { ordersRouter } from "./orders.js";
 import { plansRouter } from "./plans.js";
 import { thirdPartiesRouter } from "./third-parties.js";
 export { HttpError } from "./helpers.js";
+import { scheduleLock } from "../scheduling/lifecycle.js";
+import {
+  tagSchema,
+  numberSchema,
+  assertActiveEquipment,
+} from "./equipment-identity.js";
+import { equipmentLifecycleRouter } from "./equipment-lifecycle.js";
 const equipmentBody = z
   .object({
-    id: z.string().regex(/^[A-Z0-9][A-Z0-9-]{2,39}$/),
+    id: z
+      .string()
+      .regex(/^[A-Z0-9][A-Z0-9-]{2,79}$/)
+      .optional(),
+    tag: tagSchema,
+    equipmentNumber: numberSchema,
     name: z.string().trim().min(3).max(120),
     sectorId: z.string().min(1),
     criticality: z.number().int().min(1).max(3),
@@ -45,6 +57,7 @@ const interruptionBody = z
   .strict();
 export function createOperationsRouter(db: PrismaClient) {
   const r = Router();
+  r.use(equipmentLifecycleRouter(db));
   r.get(
     "/lookups",
     run(async (_req, res) => {
@@ -55,8 +68,11 @@ export function createOperationsRouter(db: PrismaClient) {
           orderBy: { name: "asc" },
         }),
         db.equipment.findMany({
+          where: { deletedAt: null },
           select: {
             id: true,
+            tag: true,
+            equipmentNumber: true,
             name: true,
             sectorId: true,
             criticality: true,
@@ -87,12 +103,18 @@ export function createOperationsRouter(db: PrismaClient) {
       const f = filters.parse(req.query),
         where: Prisma.EquipmentWhereInput = {
           ...equipmentWhere(f),
+          ...(f.deleted === "all"
+            ? {}
+            : { deletedAt: f.deleted === "true" ? { not: null } : null }),
+          ...(f.tagMissing === "true" ? { tag: null } : {}),
           ...(f.status ? { status: f.status } : {}),
           ...(f.q
             ? {
                 OR: [
                   { id: { contains: f.q, mode: "insensitive" } },
                   { name: { contains: f.q, mode: "insensitive" } },
+                  { tag: { contains: f.q, mode: "insensitive" } },
+                  { equipmentNumber: { contains: f.q, mode: "insensitive" } },
                 ],
               }
             : {}),
@@ -107,7 +129,12 @@ export function createOperationsRouter(db: PrismaClient) {
         }),
         db.equipment.count({ where }),
       ]);
-      res.json(pageResponse(items, total, f.page, f.limit));
+      res.json({
+        ...pageResponse(items, total, f.page, f.limit),
+        pendingTags: await db.equipment.count({
+          where: { deletedAt: null, tag: null },
+        }),
+      });
     }),
   );
   r.post(
@@ -116,8 +143,22 @@ export function createOperationsRouter(db: PrismaClient) {
       requireRole(res, planners);
       const body = equipmentBody.parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        const existing = await tx.equipment.findUnique({
+          where: { sectorId_tag: { sectorId: body.sectorId, tag: body.tag } },
+        });
+        if (existing)
+          throw new HttpError(
+            409,
+            existing.deletedAt
+              ? "A TAG está em um cadastro excluído deste setor. Use a aba Excluídos para restaurar."
+              : "TAG já cadastrada neste setor.",
+          );
         const row = await tx.equipment.create({
-          data: { ...body, isDemo: process.env.DATA_MODE !== "operational" },
+          data: {
+            ...body,
+            id: body.id || "EQ-" + randomUUID(),
+            isDemo: process.env.DATA_MODE !== "operational",
+          },
         });
         await audit(tx, actor(res), "EQUIPMENT_CREATED", "Equipment", row);
         return row;
@@ -134,9 +175,12 @@ export function createOperationsRouter(db: PrismaClient) {
         .extend({ version: z.number().int().positive() })
         .parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
         const before = must(
           await tx.equipment.findUnique({ where: { id: req.params.id } }),
         );
+        if (before.deletedAt)
+          throw new HttpError(409, "Restaure o equipamento antes de editar");
         if (before.version !== body.version)
           throw new HttpError(409, "Equipamento alterado. Atualize a tela.");
         const updated = await tx.equipment.updateMany({
@@ -270,6 +314,8 @@ export function createOperationsRouter(db: PrismaClient) {
       requireRole(res, [...planners, "TECHNICIAN"]);
       const data = interruptionData(interruptionBody.parse(req.body));
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
+        await assertActiveEquipment(tx, data.equipmentId);
         const row = await tx.interruption.create({
           data: {
             ...data,
@@ -299,9 +345,12 @@ export function createOperationsRouter(db: PrismaClient) {
         .parse(req.body);
       const data = interruptionData(body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
         const before = must(
           await tx.interruption.findUnique({ where: { id: req.params.id } }),
         );
+        if (data.equipmentId !== before.equipmentId || !data.endedAt)
+          await assertActiveEquipment(tx, data.equipmentId);
         if (before.version !== version)
           throw new HttpError(409, "Interrupção alterada. Atualize a tela.");
         const updated = await tx.interruption.updateMany({

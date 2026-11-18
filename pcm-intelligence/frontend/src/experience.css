@@ -2718,3 +2718,234 @@ summary:focus-visible {
     transition: none !important;
   }
 }
+
+/* Equipment identity, reversible removal, and plan task lists. */
+.equipment-intro {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin: 8px 0 22px;
+}
+.equipment-intro > span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  background: var(--soft);
+  color: var(--green);
+  border-radius: 12px;
+}
+.equipment-intro h2 {
+  font-size: 17px;
+}
+.equipment-intro p {
+  font-size: 12px;
+  margin: 0;
+}
+.equipment-pending {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding: 16px 18px;
+  background: #b8871a0e;
+  border: 1px solid #c69a3a33;
+  border-radius: 10px;
+  margin: 18px 0;
+}
+.equipment-pending > svg {
+  color: #bb8931;
+  flex: none;
+}
+.equipment-pending > div {
+  flex: 1;
+}
+.equipment-pending b {
+  font-size: 12px;
+}
+.equipment-pending p {
+  font-size: 11px;
+  margin: 5px 0 0;
+}
+.equipment-pending > button {
+  flex: none;
+}
+.selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  border-radius: 9px;
+  margin: 15px 0;
+  font-size: 12px;
+}
+.selection-bar > span {
+  flex: 1;
+}
+.danger-button {
+  background: #b24e44;
+  color: #fff;
+}
+.danger-text {
+  color: #b95549 !important;
+}
+.pending-tag {
+  font-size: 11px;
+  color: #a57528;
+}
+.pending-tag small {
+  display: block;
+  white-space: normal;
+  max-width: 170px;
+  overflow-wrap: anywhere;
+}
+.table-wrap input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.removal-items {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  max-height: 220px;
+  overflow: auto;
+}
+.removal-items li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.removal-items span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.plan-tasks-editor {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.plan-tasks-editor legend {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 7px;
+}
+.plan-tasks-editor > p {
+  font-size: 11px;
+  margin: 0 0 16px;
+}
+.plan-task-fields {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) 110px auto;
+  gap: 10px;
+  align-items: end;
+  margin: 10px 0 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 15px;
+}
+.plan-task-fields > label {
+  min-width: 0;
+  margin: 0 !important;
+}
+.plan-task-fields > button {
+  margin: 0 0 2px;
+}
+.plan-task-fields input {
+  min-width: 0;
+  padding: 10px !important;
+}
+.plan-tasks-detail {
+  border: 1px solid var(--line);
+  padding: 16px;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+.plan-tasks-detail h3 {
+  margin: 0 0 15px;
+  font-size: 14px;
+}
+.plan-tasks-detail ol {
+  padding-left: 18px;
+  font-size: 12px;
+}
+.plan-tasks-detail li {
+  padding: 8px 0;
+  line-height: 1.65;
+}
+.plan-tasks-detail strong {
+  margin-right: 10px;
+  color: var(--green);
+}
+.plan-tasks-detail small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.import-plan-guide p {
+  font-size: 12px;
+  margin: 8px 0;
+}
+.import-plan-guide strong {
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .equipment-intro {
+    padding: 17px 15px;
+    gap: 12px;
+  }
+  .equipment-intro h2 {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .equipment-intro p {
+    font-size: 11px;
+  }
+  .equipment-pending {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 15px;
+  }
+  .equipment-pending > div {
+    min-width: 240px;
+  }
+  .equipment-pending > button {
+    margin-left: 32px;
+  }
+  .selection-bar > span {
+    min-width: 240px;
+  }
+  .plan-task-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .plan-task-fields > label:nth-child(2) {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+  .plan-task-fields > button {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .plan-tasks-editor {
+    padding: 14px 12px;
+  }
+  .equipment-intro > span {
+    width: 36px;
+    height: 36px;
+  }
+  .import-plan-guide p {
+    font-size: 11px;
+  }
+}

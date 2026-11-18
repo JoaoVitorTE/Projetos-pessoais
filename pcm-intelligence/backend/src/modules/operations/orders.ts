@@ -4,6 +4,7 @@ import {
   syncOrderAssignments,
 } from "../scheduling/lifecycle.js";
 import { Router } from "express";
+import { assertActiveEquipment } from "./equipment-identity.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { PrismaClient, Prisma } from "@prisma/client";
@@ -198,6 +199,8 @@ export function ordersRouter(db: PrismaClient) {
       const data = create.parse(req.body),
         user = actor(res);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
+        await assertActiveEquipment(tx, data.equipmentId);
         const row = await tx.maintenanceOrder.create({
           data: {
             ...data,
@@ -235,6 +238,8 @@ export function ordersRouter(db: PrismaClient) {
             where: { id: req.params.id },
           }),
         );
+        if (body.equipmentId && body.equipmentId !== before.equipmentId)
+          await assertActiveEquipment(tx, body.equipmentId);
         if (["COMPLETED", "CANCELLED"].includes(before.status))
           throw new HttpError(409, "Ordens encerradas não podem ser alteradas");
         if (user.role.name === "TECHNICIAN") {

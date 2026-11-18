@@ -13,6 +13,7 @@ import {
 } from "../components/OperationalUI";
 import {
   canPlan,
+  equipmentCode,
   day,
   fmt,
   localDate,
@@ -21,6 +22,7 @@ import {
   type Lookups,
   type Page,
   type Plan,
+  type PlanTask,
   type User,
 } from "../types/operations";
 export function PlansPage({
@@ -202,7 +204,14 @@ export function PlansPage({
                           onClick={() => setDetail(p.id)}
                           title={p.title}
                         >
-                          <b>{p.equipmentId}</b>
+                          <b>
+                            {equipmentCode(
+                              p.equipment ||
+                                lookups.equipment.find(
+                                  (e) => e.id === p.equipmentId,
+                                ),
+                            )}
+                          </b>
                           {typeLabel[p.type]}
                           <small>{p.technician?.name}</small>
                         </button>
@@ -242,8 +251,14 @@ export function PlansPage({
                     <td>
                       <strong>{p.title}</strong>
                       <small>
-                        {p.id} · {p.equipmentId} ·{" "}
-                        {p.active ? "Ativo" : "Inativo"}
+                        {p.id} ·{" "}
+                        {equipmentCode(
+                          p.equipment ||
+                            lookups.equipment.find(
+                              (e) => e.id === p.equipmentId,
+                            ),
+                        )}{" "}
+                        · {p.active ? "Ativo" : "Inativo"}
                       </small>
                     </td>
                     <td>{typeLabel[p.type]}</td>
@@ -338,6 +353,8 @@ function PlanForm({
       intervalDays: initial?.intervalDays || 30,
       nextExecution: localDate(initial?.nextExecution),
       active: initial?.active ?? true,
+      taskListReference: initial?.taskListReference || "",
+      tasks: initial?.tasks || ([] as PlanTask[]),
     }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -432,6 +449,21 @@ function PlanForm({
           />
           Plano ativo
         </label>
+        <label className="span-2">
+          Referência da lista de tarefas · opcional
+          <input
+            aria-label="Referência da lista de tarefas"
+            maxLength={120}
+            value={form.taskListReference}
+            onChange={(e) =>
+              setForm({ ...form, taskListReference: e.target.value })
+            }
+          />
+        </label>
+        <PlanTasksEditor
+          tasks={form.tasks}
+          onChange={(tasks) => setForm({ ...form, tasks })}
+        />
         <div className="form-bottom">
           {error && (
             <p role="alert" className="error">
@@ -527,10 +559,31 @@ function PlanDetail({ id, onClose }: { id: string; onClose: () => void }) {
         <>
           <h3>{data.data.title}</h3>
           <p>
-            {data.data.equipmentId} · {typeLabel[data.data.type]} ·{" "}
+            {equipmentCode(data.data.equipment)} · {typeLabel[data.data.type]} ·{" "}
             {data.data.intervalDays} dias
           </p>
           <p>Próxima execução: {fmt(data.data.nextExecution)}</p>
+          {data.data.taskListReference && (
+            <p>
+              Lista de tarefas: <strong>{data.data.taskListReference}</strong>
+            </p>
+          )}
+          {!!data.data.tasks?.length && (
+            <section className="plan-tasks-detail">
+              <h3>Tarefas planejadas · {data.data.tasks.length}</h3>
+              <ol>
+                {data.data.tasks.map((task) => (
+                  <li key={task.code}>
+                    <strong>{task.code}</strong>
+                    <span>{task.description}</span>
+                    {task.estimatedMinutes && (
+                      <small>{task.estimatedMinutes} min estimados</small>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
           <ol className="timeline">
             {data.data.executions?.map((x) => (
               <li key={x.id}>
@@ -547,5 +600,93 @@ function PlanDetail({ id, onClose }: { id: string; onClose: () => void }) {
         </>
       )}
     </Modal>
+  );
+}
+
+function PlanTasksEditor({
+  tasks,
+  onChange,
+}: {
+  tasks: PlanTask[];
+  onChange: (tasks: PlanTask[]) => void;
+}) {
+  function update(index: number, patch: Partial<PlanTask>) {
+    onChange(tasks.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  }
+  return (
+    <fieldset className="plan-tasks-editor span-2">
+      <legend>Lista de tarefas do plano</legend>
+      <p>
+        Descreva as operações previstas. A importação também pode agrupar várias
+        linhas de tarefas no mesmo plano.
+      </p>
+      {tasks.map((task, index) => (
+        <div className="plan-task-fields" key={index}>
+          <label>
+            Código
+            <input
+              aria-label={"Código da tarefa " + (index + 1)}
+              required
+              maxLength={40}
+              value={task.code}
+              onChange={(e) => update(index, { code: e.target.value })}
+            />
+          </label>
+          <label>
+            Descrição
+            <input
+              aria-label={"Descrição da tarefa " + (index + 1)}
+              required
+              minLength={3}
+              maxLength={1000}
+              value={task.description}
+              onChange={(e) => update(index, { description: e.target.value })}
+            />
+          </label>
+          <label>
+            Minutos · opcional
+            <input
+              aria-label={"Minutos da tarefa " + (index + 1)}
+              type="number"
+              min={1}
+              max={100000}
+              value={task.estimatedMinutes ?? ""}
+              onChange={(e) =>
+                update(index, {
+                  estimatedMinutes: e.target.value
+                    ? Number(e.target.value)
+                    : null,
+                })
+              }
+            />
+          </label>
+          <button
+            className="secondary small danger-text"
+            type="button"
+            aria-label={"Remover tarefa " + (index + 1)}
+            onClick={() => onChange(tasks.filter((_, i) => i !== index))}
+          >
+            Remover
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="secondary small"
+        disabled={tasks.length >= 200}
+        onClick={() =>
+          onChange([
+            ...tasks,
+            {
+              code: String((tasks.length + 1) * 10).padStart(4, "0"),
+              description: "",
+              estimatedMinutes: null,
+            },
+          ])
+        }
+      >
+        Adicionar tarefa
+      </button>
+    </fieldset>
   );
 }

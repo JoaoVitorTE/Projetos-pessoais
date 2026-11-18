@@ -12,6 +12,11 @@ export async function target(db: DB, kind: "ORDER" | "PLAN", id: string) {
     );
     if (["COMPLETED", "CANCELLED"].includes(row.status))
       throw new HttpError(409, "A ordem já foi encerrada");
+    if (row.equipment.deletedAt)
+      throw new HttpError(
+        409,
+        "Equipamento excluído. Restaure o cadastro antes de reservar.",
+      );
     return row;
   }
   const row = must(
@@ -21,6 +26,11 @@ export async function target(db: DB, kind: "ORDER" | "PLAN", id: string) {
     }),
   );
   if (!row.active) throw new HttpError(409, "O plano está inativo");
+  if (row.equipment.deletedAt)
+    throw new HttpError(
+      409,
+      "Equipamento excluído. Restaure o cadastro antes de reservar.",
+    );
   return row;
 }
 export async function inspectSlot(

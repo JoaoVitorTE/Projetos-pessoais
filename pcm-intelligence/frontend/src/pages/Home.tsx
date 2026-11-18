@@ -16,7 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { State } from "../components/OperationalUI";
-import type { User } from "../types/operations";
+import { equipmentCode, type Lookups, type User } from "../types/operations";
 import type { Navigate, ModuleId } from "../types/navigation";
 import { allowedEntries } from "../components/Navigation";
 import { dateTime, clock } from "../components/scheduling/dates";
@@ -79,6 +79,7 @@ export type HomeData = {
 };
 export function HomePage({
   user,
+  lookups,
   data,
   error,
   loading,
@@ -87,6 +88,7 @@ export function HomePage({
   onTutorial,
 }: {
   user: User;
+  lookups?: Lookups;
   data: HomeData | null;
   error: string;
   loading: boolean;
@@ -397,7 +399,12 @@ export function HomePage({
                       </span>
                       <span>
                         <b>
-                          {a.equipmentId} · {a.reference}
+                          {equipmentCode(
+                            lookups?.equipment.find(
+                              (e) => e.id === a.equipmentId,
+                            ) || { id: a.equipmentId },
+                          )}{" "}
+                          · {a.reference}
                         </b>
                         <small>{a.title}</small>
                         <em>{a.technician}</em>
@@ -440,7 +447,13 @@ export function HomePage({
                     </span>
                     <span>
                       <b>{p.title}</b>
-                      <small>{p.equipmentId}</small>
+                      <small>
+                        {equipmentCode(
+                          lookups?.equipment.find(
+                            (e) => e.id === p.equipmentId,
+                          ) || { id: p.equipmentId },
+                        )}
+                      </small>
                     </span>
                     <em>{dateTime(p.nextExecution)}</em>
                     <ArrowUpRight size={14} />

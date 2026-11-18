@@ -99,6 +99,7 @@ describe("Equipamentos e interrupções", () => {
   it("cadastra equipamento e filtra por setor e criticidade", async () => {
     const r = await call("post", "/equipment", admin, {
       id: equipmentId,
+      tag: equipmentId,
       name: "Equipamento QA fictício",
       sectorId: "SEC-1",
       criticality: 3,
@@ -116,6 +117,7 @@ describe("Equipamentos e interrupções", () => {
   it("identifica código duplicado e referência inválida", async () => {
     const body = {
       id: equipmentId,
+      tag: equipmentId,
       name: "Equipamento QA fictício",
       sectorId: "SEC-1",
       criticality: 3,
@@ -126,6 +128,7 @@ describe("Equipamentos e interrupções", () => {
       (
         await call("patch", "/equipment/" + equipmentId, admin, {
           name: body.name,
+          tag: equipmentId,
           sectorId: "not-found",
           version: 1,
           criticality: 3,

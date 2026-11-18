@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useResource } from "../../hooks/useResource";
 import { api } from "../../services/api";
 import { Modal, State } from "../OperationalUI";
-import { canPlan, type User } from "../../types/operations";
+import { canPlan, equipmentCode, type User } from "../../types/operations";
 import { dateTime } from "./dates";
 import { scheduleLabels, type Assignment } from "./types";
 const historyLabels: Record<string, string> = {
@@ -46,7 +46,7 @@ export function AssignmentDetails({
       {a && (
         <>
           <h3>
-            {a.reference} · {a.equipmentId}
+            {a.reference} · {equipmentCode(a.equipment)}
           </h3>
           <p>{a.title}</p>
           <p>

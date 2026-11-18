@@ -31,11 +31,45 @@ const targetLabel: Record<string, string> = {
   PLANS: "Planos preventivos / lubrificação",
   INTERRUPTIONS: "Interrupções",
 };
+const changedFieldNames: Record<string, string> = {
+  tag: "TAG",
+  equipmentNumber: "Número do equipamento",
+  tasks: "Lista de tarefas",
+  taskListReference: "Referência da lista",
+  sectorId: "Setor",
+  equipmentId: "Equipamento",
+  technicianId: "Técnico",
+  nextExecution: "Vencimento",
+  intervalDays: "Periodicidade",
+  name: "Nome",
+  title: "Nome do plano",
+  type: "Tipo",
+  status: "Situação",
+  criticality: "Criticidade",
+  active: "Ativo",
+};
+function changedValue(value: unknown) {
+  if (value == null || value === "") return "Não informado";
+  if (Array.isArray(value))
+    return (
+      value
+        .map(
+          (t: any) =>
+            t?.code +
+            ": " +
+            t?.description +
+            (t?.estimatedMinutes ? " (" + t.estimatedMinutes + " min)" : ""),
+        )
+        .join("; ") || "Lista vazia"
+    );
+  return typeof value === "boolean" ? (value ? "Sim" : "Não") : String(value);
+}
 const actionLabel: Record<string, string> = {
   CREATE: "Novo",
   UPDATE: "Atualização",
   SKIP: "Sem alteração",
   DUPLICATE: "Repetida no arquivo",
+  GROUPED: "Tarefa agrupada no plano",
   CONFLICT: "Conflito",
   INVALID: "Inválida",
 };
@@ -60,7 +94,35 @@ const aliases: Record<string, string[]> = {
     "ocorrencia",
     "identificador",
   ],
-  equipmentId: ["equipamento", "codigoequipamento", "equipmentid"],
+  equipmentId: [
+    "tag",
+    "equipamento",
+    "codigoequipamento",
+    "equipmentid",
+    "nequipamento",
+    "numeroequipamento",
+    "numerodoequipamento",
+  ],
+  equipmentNumber: [
+    "nequipamento",
+    "numeroequipamento",
+    "numerodoequipamento",
+    "equipmentnumber",
+  ],
+  taskListReference: [
+    "listadetarefas",
+    "listatarefas",
+    "referencialista",
+    "grupolista",
+  ],
+  taskCode: ["operacao", "codigotarefa", "codigooperacao", "tarefa"],
+  taskDescription: [
+    "descricaotarefa",
+    "descricaodatarefa",
+    "descricaooperacao",
+    "textobreveoperacao",
+  ],
+  estimatedMinutes: ["minutos", "minutosestimados", "duracaominutos"],
   name: ["nome", "nomeequipamento"],
   sector: ["setor", "sector"],
   criticality: ["criticidade"],
@@ -173,13 +235,16 @@ export function ImportsPage({
       for (const field of specs.data!.fields[source.target]) {
         const old = result.mapping?.[field.key];
         next[field.key] =
-          old && result.headers.includes(old)
+          (field.key === "equipmentId" &&
+            source.target === "EQUIPMENT" &&
+            result.headers.find((h: string) => norm(h) === "tag")) ||
+          (old && result.headers.includes(old)
             ? old
             : result.headers.find(
                 (h: string) =>
                   norm(h) === norm(field.key) ||
                   (aliases[field.key] || []).includes(norm(h)),
-              ) || "";
+              ) || "");
       }
       setMapping(next);
       setOptions({ ...baseOptions, ...(result.options || {}) });
@@ -314,6 +379,40 @@ export function ImportsPage({
                 : "Dados fornecidos em exportação autorizada"}{" "}
               · Sistema: {source.system} · Identificação da base: {source.scope}
             </p>
+            {source.target === "PLANS" && (
+              <div className="form-guidance import-plan-guide">
+                <div>
+                  <strong>
+                    Preventivas, lubrificação e tarefas no mesmo arquivo
+                  </strong>
+                  <p>
+                    Use uma coluna Tipo para distinguir PREVENTIVE (preventiva)
+                    e LUBRICATION (lubrificação). Para listas de tarefas, repita
+                    os dados do plano em cada linha e preencha Operação,
+                    Descrição da tarefa e, se disponível, Minutos.
+                  </p>
+                  <p>
+                    O mesmo plano é agrupado na prévia. Se houver itens
+                    diferentes dentro de um plano SAP, use Plano + Item como
+                    chave. A disponibilidade de um relatório conjunto depende do
+                    SAP da sua unidade.
+                  </p>
+                  <p>
+                    As tarefas mapeadas substituem a lista do plano após sua
+                    revisão. Arquivos sem tarefas preservam a lista atual. Baixe
+                    o exemplo para conferir o formato.
+                  </p>
+                </div>
+              </div>
+            )}
+            {source.target === "EQUIPMENT" && (
+              <p className="form-guidance">
+                Mapeie TAG como identificação obrigatória e Nº Equipamento como
+                campo opcional. A mesma TAG pode existir em setores diferentes.
+                Sem chave externa, o sistema usa TAG + setor para reconhecer
+                repetidos.
+              </p>
+            )}
             <div className="sample-links">
               <a href={"/api/imports/sample/" + source.target}>
                 Baixar CSV fictício
@@ -721,8 +820,8 @@ export function ImportsPage({
                           </summary>
                           {row.changes.map((c: any) => (
                             <p key={c.field}>
-                              {c.field}: {String(c.before ?? "vazio")} →{" "}
-                              {String(c.after ?? "vazio")}
+                              {changedFieldNames[c.field] || c.field}:{" "}
+                              {changedValue(c.before)} → {changedValue(c.after)}
                             </p>
                           ))}
                         </details>
@@ -799,8 +898,8 @@ export function ImportsPage({
           <p>
             {job.counts?.created || 0} novos · {job.counts?.updated || 0}{" "}
             atualizados · {job.counts?.unchanged || 0} sem alteração ·{" "}
-            {job.counts?.duplicates || 0} repetidos · {job.counts?.errors || 0}{" "}
-            pendências
+            {job.counts?.duplicates || 0} repetidos · {job.counts?.grouped || 0}{" "}
+            tarefas agrupadas · {job.counts?.errors || 0} pendências
           </p>
           {busy ? (
             <button

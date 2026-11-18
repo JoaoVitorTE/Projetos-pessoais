@@ -1,5 +1,5 @@
 {
-  "version": "0.5",
+  "version": "0.6",
   "onboardingVersion": 1,
   "updatedAt": "18/11/2026",
   "title": "Manual de uso e treinamento",
@@ -148,14 +148,15 @@
       "summary": "Organize os cadastros antes da programação de manutenção.",
       "steps": [
         "Em Cadastros e acessos, cadastre os setores da operação.",
-        "Em Equipamentos, informe código, nome, setor, criticidade e situação. Use Não informado quando não houver confirmação do estado operacional.",
+        "Em Equipamentos, informe a TAG obrigatória, o nome e o setor. A TAG pode repetir em setores diferentes. O número do equipamento é opcional; os zeros à esquerda são preservados.",
         "Em Cadastros e acessos → Técnicos, cadastre nome, especialidade e situação de cada integrante.",
         "O administrador pode criar usuários e vinculá-los aos técnicos que farão apontamentos. Usuário e técnico são cadastros diferentes.",
         "Em Agenda inteligente → Jornadas, configure os horários de trabalho dos técnicos."
       ],
       "tips": [
         "Desativar um técnico preserva seu histórico. Reservas futuras precisam ser resolvidas antes da desativação.",
-        "Quando não tiver permissão de cadastro, solicite a preparação ao responsável pelo PCM."
+        "Quando não tiver permissão de cadastro, solicite a preparação ao responsável pelo PCM.",
+        "Cadastros antigos com TAG pendente podem ser corrigidos em Editar ou pela reimportação na mesma origem, com TAG e número mapeados separadamente."
       ],
       "exercise": "Em ambiente de treinamento autorizado, identifique um setor, um equipamento e o técnico responsável por uma atividade fictícia."
     },
@@ -309,12 +310,19 @@
         "Envie CSV UTF-8 ou XLSX e mapeie os cabeçalhos. Use uma chave externa estável; nome do arquivo e número da linha não identificam o registro.",
         "Confira datas, fuso e significado dos códigos. Gere a prévia e revise novos, alterados, repetidos, inválidos e conflitos.",
         "Digite IMPORTAR para confirmar. Se houver erros, corrija o arquivo ou autorize somente as linhas válidas.",
-        "Acompanhe o lote no histórico. Um lote pode ser retomado ou desfeito quando os registros ainda estiverem no estado esperado."
+        "Acompanhe o lote no histórico. Um lote pode ser retomado ou desfeito quando os registros ainda estiverem no estado esperado.",
+        "Para equipamentos, mapeie TAG como identificação obrigatória e o número como campo opcional. Sem chave externa, o importador usa TAG + setor.",
+        "Preventivas e lubrificação podem estar no mesmo arquivo, identificadas pela coluna Tipo. Mapeie os valores para PREVENTIVE e LUBRICATION.",
+        "Para importar as tarefas junto com os planos, use uma linha por operação, repetindo os dados do plano e informando Operação, Descrição da tarefa e Minutos, se disponíveis.",
+        "Confira as tarefas agrupadas e as divergências na prévia. Se um plano SAP possuir vários itens, use o número do plano e o item na chave composta."
       ],
       "tips": [
         "Limite por arquivo: 3 MB, 1.000 linhas de dados e 60 colunas.",
         "Itens repetidos da mesma base não criam novas cópias. Alterações locais e reservas da agenda recebem proteção contra substituição silenciosa.",
-        "A conexão automática com SAP fica para uma etapa futura; este procedimento usa somente arquivos autorizados."
+        "A conexão automática com SAP fica para uma etapa futura; este procedimento usa somente arquivos autorizados.",
+        "Tarefas mapeadas substituem a lista do plano depois da confirmação. Arquivos sem tarefas preservam a lista atual.",
+        "A existência de uma exportação conjunta depende dos relatórios, da versão e das permissões do SAP da unidade. Não há conexão automática com o SAP.",
+        "Colunas finais totalmente vazias são ignoradas com aviso. Colunas com dados precisam de título."
       ],
       "exercise": "Use um arquivo fictício no ambiente de treinamento e explique o resultado da prévia antes de confirmar."
     },
@@ -356,6 +364,26 @@
         "Uma nova URL pode pedir novo login. Use a mesma conta e senha; a mudança de endereço não cria outra conta."
       ],
       "exercise": "Descreva a quem você deve recorrer em caso de senha esquecida, permissão insuficiente ou reserva conflitante."
+    },
+    {
+      "id": "equipment-corrections",
+      "category": "Cadastros",
+      "title": "Corrigir, excluir e restaurar equipamentos",
+      "module": "equipment",
+      "summary": "Ajuste TAG e número ou retire cadastros incorretos com histórico.",
+      "steps": [
+        "Abra Operação → Equipamentos. Pesquise pela TAG, pelo número ou pelo nome.",
+        "Use Editar para corrigir TAG, número, nome ou setor. O número é opcional. A TAG é obrigatória ao salvar.",
+        "Para retirar um cadastro incorreto, escolha Excluir. Para vários, marque as linhas e use Excluir selecionados.",
+        "Informe o motivo, confira a seleção, digite EXCLUIR e confirme. OS abertas, planos ativos, paradas abertas ou reservas abertas precisam ser regularizados antes.",
+        "Na aba Excluídos, consulte o cadastro ou escolha Restaurar e registre o motivo.",
+        "O botão Histórico mostra as movimentações e os responsáveis. A exclusão preserva os vínculos e históricos existentes."
+      ],
+      "tips": [
+        "A exclusão retira o equipamento dos seletores e dos indicadores ativos; seu registro continua disponível para restauração.",
+        "Uma TAG de cadastro excluído continua reservada no setor. Restaure e corrija o cadastro em vez de criar outro com a mesma identidade."
+      ],
+      "exercise": "Localize um equipamento e abra Histórico. Não exclua registros reais durante o treinamento."
     }
   ]
 }

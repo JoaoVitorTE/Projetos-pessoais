@@ -8,6 +8,7 @@ export type ParsedFile = {
   sheets: string[];
   sheet: string;
   headerRow: number;
+  warnings: string[];
 };
 async function inspectZip(buffer: Buffer) {
   await new Promise<void>((resolve, reject) =>
@@ -174,6 +175,23 @@ export async function readFile(
       400,
       "Divida a planilha em arquivos com até 1.000 linhas",
     );
+  const warnings: string[] = [];
+  let removed = 0;
+  while ((all[headerRow - 1]?.length || 0) > 1) {
+    const index = all[headerRow - 1].length - 1;
+    if (
+      String(all[headerRow - 1][index] || "").trim() ||
+      all.slice(headerRow).some((row) => String(row[index] || "").trim())
+    )
+      break;
+    all = all.map((row) => row.slice(0, index));
+    removed++;
+  }
+  if (removed)
+    warnings.push(
+      removed +
+        " coluna(s) final(is) totalmente vazia(s) foram ignoradas. Nenhuma coluna com dados foi descartada.",
+    );
   const headers = (all[headerRow - 1] || []).map((v) => v.trim());
   if (
     !headers.length ||
@@ -183,12 +201,18 @@ export async function readFile(
   )
     throw new HttpError(
       400,
-      "Cabeçalhos precisam ser únicos, não vazios e ter até 60 colunas",
+      headers.length > 60
+        ? "A planilha tem " + headers.length + " colunas. Use até 60."
+        : headers.some((h) => !h)
+          ? "Coluna(s) sem título: " +
+            headers.flatMap((h, i) => (!h ? [i + 1] : [])).join(", ") +
+            ". Preencha os títulos das colunas que contêm dados."
+          : "Título de coluna repetido. Use um nome diferente para cada coluna.",
     );
   const rows = all
     .slice(headerRow)
     .filter((r) => r.some((v) => String(v).trim()));
   if (!rows.length)
     throw new HttpError(400, "A planilha não tem linhas de dados");
-  return { headers, rows, sheets, sheet, headerRow };
+  return { headers, rows, sheets, sheet, headerRow, warnings };
 }

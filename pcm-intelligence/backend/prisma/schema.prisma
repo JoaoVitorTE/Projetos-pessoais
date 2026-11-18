@@ -52,6 +52,9 @@ model Sector {
 }
 model Equipment {
  id String @id
+ tag String?
+ equipmentNumber String? @unique
+ deletedAt DateTime?
  version Int @default(1)
  name String
  criticality Int
@@ -63,6 +66,9 @@ model Equipment {
  orders MaintenanceOrder[]
  plans MaintenancePlan[]
  @@index([sectorId, criticality])
+ @@unique([sectorId, tag])
+ @@index([tag])
+ @@index([deletedAt])
 }
 model Technician {
  id String @id
@@ -150,6 +156,8 @@ model MaintenancePlan {
  intervalDays Int
  nextExecution DateTime
  active Boolean @default(true)
+ taskListReference String?
+ tasks Json @default("[]")
  isDemo Boolean @default(true)
  executions MaintenanceExecution[]
  assignments TechnicianAssignment[]

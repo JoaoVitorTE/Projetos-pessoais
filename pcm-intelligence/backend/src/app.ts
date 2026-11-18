@@ -70,7 +70,7 @@ export function createApp(db: PrismaClient) {
       await db.$queryRaw`SELECT 1`;
       res.json({
         status: "ok",
-        version: "0.5.0",
+        version: "0.6.0",
         phase: 3,
         database: "connected",
         dataMode: process.env.DATA_MODE,

@@ -442,7 +442,7 @@ export function FloatingNavigation({
               ))}
             </nav>
             <div className="drawer-footer">
-              <small>PCM Intelligence · v0.5</small>
+              <small>PCM Intelligence · v0.6</small>
               <span>Planejar com clareza. Executar com controle.</span>
             </div>
           </div>

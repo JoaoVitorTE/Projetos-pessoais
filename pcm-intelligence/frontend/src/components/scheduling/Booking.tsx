@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../../services/api";
 import { Modal } from "../OperationalUI";
-import type { Lookups } from "../../types/operations";
+import { equipmentCode, type Lookups } from "../../types/operations";
 import type { Assignment, Suggestion, Target } from "./types";
 import { defaultSlot, inputDate, toIso } from "./dates";
 type Check = {
@@ -38,6 +38,7 @@ export function BookingForm({
           title: current.title,
           reference: current.reference,
           equipmentId: current.equipmentId,
+          equipment: current.equipment,
         }
       : initial;
   const list =
@@ -146,7 +147,7 @@ export function BookingForm({
             {list.map((t) => (
               <option key={t.kind + ":" + t.id} value={t.kind + ":" + t.id}>
                 {t.kind === "ORDER" ? "OS" : "Plano"} · {t.reference} ·{" "}
-                {t.equipmentId} · {t.title.slice(0, 65)}
+                {equipmentCode(t.equipment)} · {t.title.slice(0, 65)}
               </option>
             ))}
           </select>

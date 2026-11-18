@@ -180,7 +180,7 @@ describe("Leitura segura de arquivos", () => {
     ).rejects.toThrow("inválido");
     await expect(
       readFile(Buffer.from("OS;OS\n1;2"), "a.csv", {}),
-    ).rejects.toThrow("únicos");
+    ).rejects.toThrow("repetido");
     await expect(
       readFile(Buffer.alloc(3 * 1024 * 1024 + 1), "a.csv", {}),
     ).rejects.toThrow("3 MB");

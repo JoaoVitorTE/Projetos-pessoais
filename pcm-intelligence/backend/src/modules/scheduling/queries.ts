@@ -178,7 +178,7 @@ export async function targets(db: PrismaClient, f: Query) {
     db.maintenanceOrder.findMany({
       where: {
         status: { notIn: ["COMPLETED", "CANCELLED"] },
-        equipment: gear,
+        equipment: { ...gear, deletedAt: null },
         OR: [{ scheduledAt: null }, { scheduledAt: { lt: to } }],
       },
       include: {
@@ -189,7 +189,11 @@ export async function targets(db: PrismaClient, f: Query) {
       take: 251,
     }),
     db.maintenancePlan.findMany({
-      where: { active: true, equipment: gear, nextExecution: { lt: to } },
+      where: {
+        active: true,
+        equipment: { ...gear, deletedAt: null },
+        nextExecution: { lt: to },
+      },
       include: {
         equipment: { include: { sector: true } },
         technician: { select: { id: true, name: true } },

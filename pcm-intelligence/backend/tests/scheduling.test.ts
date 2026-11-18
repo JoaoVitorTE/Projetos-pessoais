@@ -128,6 +128,7 @@ beforeAll(async () => {
       (
         await call("post", "/equipment", {
           id: equipment[i],
+          tag: equipment[i],
           name: "Equipamento fictício " + tag,
           sectorId: "SEC-" + (i + 1),
           criticality: i === 0 ? 3 : 1,
