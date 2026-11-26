@@ -10,9 +10,12 @@ import {
   EyeOff,
   Download,
   KeyRound,
+  Moon,
+  Sun,
 } from "lucide-react";
 import "./styles.css";
 import "./experience.css";
+import "./visual.css";
 import { api } from "./services/api";
 import { OperationalShell } from "./components/OperationalShell";
 import { PasswordForm } from "./components/PasswordForm";
@@ -92,6 +95,14 @@ function App() {
           <small>Planejamento e controle de manutenção industrial</small>
         </section>
         <section className="login-form">
+          <button
+            type="button"
+            className="header-icon login-theme"
+            aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
+            onClick={() => setDark(!dark)}
+          >
+            {dark ? <Sun size={19} /> : <Moon size={19} />}
+          </button>
           <div className="login-box">
             <span className="login-key">
               <KeyRound size={21} />

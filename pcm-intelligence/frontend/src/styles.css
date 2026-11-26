@@ -1,15 +1,25 @@
 :root {
-  font-family: "Segoe UI", sans-serif;
-  color: #263547;
-  background: #f5f7fa;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  color-scheme: light;
   font-synthesis: none;
   --surface: #fff;
-  --bg: #f5f7fa;
-  --line: #e6ebf0;
-  --muted: #7a8797;
-  --ink: #263547;
-  --green: #167b68;
-  --soft: #edf7f3;
+  --surface-raised: #f7fafc;
+  --bg: #edf4f8;
+  --line: #ccdce7;
+  --muted: #496275;
+  --ink: #102c43;
+  --green: #08715e;
+  --soft: #dff4ee;
+  --blue: #165a9f;
+  --blue-soft: #e4effd;
+  --accent-border: #6e9fb8;
+  --focus: #1766b2;
+  --chart-blue: #266eb8;
+  --chart-green: #00826b;
+  --shadow: 0 8px 28px #153d6010;
+  --shadow-raised: 0 18px 48px #153d6020;
 }
 * {
   box-sizing: border-box;
@@ -45,7 +55,7 @@ input:focus-visible {
 h1,
 h2,
 .brand {
-  font-family: "Segoe UI", sans-serif;
+  font-family: inherit;
 }
 h1 {
   font-size: 30px;
@@ -414,7 +424,7 @@ header > div {
 }
 .card > strong {
   display: block;
-  font-family: "Segoe UI", sans-serif;
+  font-family: inherit;
   font-size: 29px;
   margin: 12px 0;
   color: var(--ink);
@@ -517,15 +527,23 @@ th {
   color: var(--muted);
 }
 [data-theme="dark"] {
-  --surface: #172628;
-  --bg: #102022;
-  --line: #2b3d40;
-  --muted: #9aafb1;
-  --ink: #e3eeee;
-  --green: #73d3b4;
-  --soft: #203e38;
-  color: var(--ink);
-  background: var(--bg);
+  color-scheme: dark;
+  --surface: #102638;
+  --surface-raised: #172f42;
+  --bg: #091823;
+  --line: #2d495e;
+  --muted: #a8bfd0;
+  --ink: #ecf6fd;
+  --green: #65dfb8;
+  --soft: #143b39;
+  --blue: #8dc2ff;
+  --blue-soft: #193853;
+  --accent-border: #5685a5;
+  --focus: #97ccff;
+  --chart-blue: #75b6ff;
+  --chart-green: #5dd8b1;
+  --shadow: 0 10px 28px #010a1660;
+  --shadow-raised: 0 18px 48px #010a1680;
 }
 [data-theme="dark"] .notice {
   border-color: #315c50;

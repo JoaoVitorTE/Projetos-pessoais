@@ -100,7 +100,7 @@ function Chart({
           height={Math.max(180, points.length * 29 + 40)}
         >
           <BarChart data={points} layout="vertical" margin={{ right: 30 }}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid stroke="var(--line)" strokeDasharray="4 5" />
             <XAxis
               type="number"
               allowDecimals={typeof data[0]?.value === "string"}
@@ -110,8 +110,12 @@ function Chart({
             <Bar
               dataKey="value"
               name={title}
-              fill="#087e8b"
-              isAnimationActive={false}
+              fill="var(--chart-green)"
+              radius={[0, 5, 5, 0]}
+              isAnimationActive={points.length <= 50 ? "auto" : false}
+              animationBegin={0}
+              animationDuration={420}
+              animationEasing="ease-out"
               barSize={22}
             />
           </BarChart>

@@ -45,8 +45,8 @@ type Data = {
   definitions: string[];
 };
 const colors = [
-  "#24a88a",
-  "#407daf",
+  "var(--chart-green)",
+  "var(--chart-blue)",
   "#f0ae4c",
   "#db7465",
   "#7e72b3",
@@ -142,7 +142,7 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
             >
               <ResponsiveContainer width="100%" height={245}>
                 <LineChart data={d.trend}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke="var(--line)" strokeDasharray="4 5" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(v) => v.slice(5)}
@@ -151,10 +151,15 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
                   <YAxis fontSize={10} />
                   <Tooltip />
                   <Line
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     dataKey="minutes"
                     name="Minutos de parada"
                     stroke={colors[0]}
+                    strokeWidth={2.5}
+                    type="monotone"
                     dot={false}
                   />
                 </LineChart>
@@ -170,7 +175,10 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
                   <YAxis allowDecimals={false} fontSize={10} />
                   <Tooltip />
                   <Bar
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     dataKey="count"
                     name="Interrupções"
                     fill={colors[1]}
@@ -194,7 +202,10 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
                   />
                   <Tooltip />
                   <Bar
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     dataKey="minutes"
                     name="Minutos"
                     fill={colors[0]}
@@ -210,7 +221,10 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
               <ResponsiveContainer width="100%" height={245}>
                 <PieChart>
                   <Pie
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     data={d.orderStatus.map((s) => ({
                       name: statusLabel[s.status],
                       value: s.count,
@@ -243,13 +257,19 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
                   <Tooltip />
                   <Legend />
                   <Bar
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     dataKey="planned"
                     name="Previstos"
                     fill={colors[1]}
                   />
                   <Bar
-                    isAnimationActive={false}
+                    isAnimationActive="auto"
+                    animationBegin={0}
+                    animationDuration={420}
+                    animationEasing="ease-out"
                     dataKey="done"
                     name="Realizados"
                     fill={colors[0]}
