@@ -1,3 +1,4 @@
+import { SapWorkbook } from "./SapWorkbook";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
@@ -156,7 +157,36 @@ const baseOptions = {
   allowOverwriteModified: false,
   valueMappings: {} as Record<string, Record<string, string>>,
 };
-export function ImportsPage({
+export function ImportsPage(props: {
+  lookups: Lookups;
+  onChanged: () => void;
+}) {
+  const [workbook, setWorkbook] = useState(true);
+  return (
+    <>
+      <div className="tabs">
+        <button
+          className={workbook ? "" : "secondary"}
+          onClick={() => setWorkbook(true)}
+        >
+          Planilha SAP
+        </button>
+        <button
+          className={workbook ? "secondary" : ""}
+          onClick={() => setWorkbook(false)}
+        >
+          Outras importações
+        </button>
+      </div>
+      {workbook ? (
+        <SapWorkbook onChanged={props.onChanged} />
+      ) : (
+        <LegacyImportsPage {...props} />
+      )}
+    </>
+  );
+}
+function LegacyImportsPage({
   lookups,
   onChanged,
 }: {

@@ -116,6 +116,18 @@ export async function undoPreview(db: PrismaClient, id: string) {
     blockers.push(
       "Há interrupções posteriores vinculadas aos equipamentos criados",
     );
+  if (
+    (await db.sapOrder.count({
+      where: {
+        OR: [
+          { localOrderId: { in: created("ORDERS") } },
+          { equipmentId: { in: gearIds } },
+        ],
+      },
+    })) ||
+    (await db.sapNote.count({ where: { equipmentId: { in: gearIds } } }))
+  )
+    blockers.push("Há ordens ou notas SAP vinculadas aos registros criados");
   return {
     changes: changes.length,
     blockers: [...new Set(blockers)],

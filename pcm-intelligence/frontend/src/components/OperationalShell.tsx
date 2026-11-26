@@ -192,7 +192,7 @@ export function OperationalShell({
                     onChanged={refreshLookups}
                   />
                 ) : tab === "reports" ? (
-                  <ReportsPage lookups={lookups.data} />
+                  <ReportsPage lookups={lookups.data} user={user} />
                 ) : tab === "assistant" ? (
                   <AssistantPage />
                 ) : tab === "alerts" ? (

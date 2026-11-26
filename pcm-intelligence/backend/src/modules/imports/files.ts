@@ -5,6 +5,7 @@ import { HttpError } from "../operations/helpers.js";
 export type ParsedFile = {
   headers: string[];
   rows: string[][];
+  rowNumbers: number[];
   sheets: string[];
   sheet: string;
   headerRow: number;
@@ -72,10 +73,30 @@ async function inspectZip(buffer: Buffer) {
   );
 }
 
+export async function loadWorkbook(buffer: Buffer) {
+  if (!buffer.length || buffer.length > 3 * 1024 * 1024)
+    throw new HttpError(400, "O arquivo deve ter até 3 MB");
+  await inspectZip(buffer);
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.load(buffer as any);
+  } catch {
+    throw new HttpError(400, "Não foi possível ler o XLSX");
+  }
+  return workbook;
+}
+
 export async function readFile(
   buffer: Buffer,
   filename: string,
-  settings: { sheet?: string; headerRow?: number; delimiter?: string },
+  settings: {
+    sheet?: string;
+    headerRow?: number;
+    delimiter?: string;
+    workbook?: ExcelJS.Workbook;
+    allowEmpty?: boolean;
+    allowUnmapped?: boolean;
+  },
 ): Promise<ParsedFile> {
   if (!buffer.length || buffer.length > 3 * 1024 * 1024)
     throw new HttpError(400, "O arquivo deve ter até 3 MB");
@@ -126,13 +147,7 @@ export async function readFile(
     sheets = ["CSV"];
     sheet = "CSV";
   } else if (filename.toLowerCase().endsWith(".xlsx")) {
-    await inspectZip(buffer);
-    const wb = new ExcelJS.Workbook();
-    try {
-      await wb.xlsx.load(buffer as any);
-    } catch {
-      throw new HttpError(400, "Não foi possível ler o XLSX");
-    }
+    const wb = settings.workbook || (await loadWorkbook(buffer));
     sheets = wb.worksheets.map((s) => s.name);
     const ws = settings.sheet
       ? wb.getWorksheet(settings.sheet)
@@ -158,7 +173,7 @@ export async function readFile(
           if (!Number.isSafeInteger(value) && Number.isInteger(value))
             throw new HttpError(
               400,
-              "Número longo perdeu precisão no Excel. Exporte identificadores como texto.",
+              `Linha ${r}, coluna ${c}: número longo perdeu precisão no Excel. Exporte identificadores como texto.`,
             );
           row.push(
             /^0+$/.test(cell.numFmt || "")
@@ -195,8 +210,8 @@ export async function readFile(
   const headers = (all[headerRow - 1] || []).map((v) => v.trim());
   if (
     !headers.length ||
-    headers.some((h) => !h) ||
-    new Set(headers).size !== headers.length ||
+    (!settings.allowUnmapped &&
+      (headers.some((h) => !h) || new Set(headers).size !== headers.length)) ||
     headers.length > 60
   )
     throw new HttpError(
@@ -209,10 +224,15 @@ export async function readFile(
             ". Preencha os títulos das colunas que contêm dados."
           : "Título de coluna repetido. Use um nome diferente para cada coluna.",
     );
-  const rows = all
-    .slice(headerRow)
-    .filter((r) => r.some((v) => String(v).trim()));
-  if (!rows.length)
+  const rows: string[][] = [],
+    rowNumbers: number[] = [];
+  all.slice(headerRow).forEach((row, index) => {
+    if (row.some((value) => String(value).trim())) {
+      rows.push(row);
+      rowNumbers.push(headerRow + index + 1);
+    }
+  });
+  if (!rows.length && !settings.allowEmpty)
     throw new HttpError(400, "A planilha não tem linhas de dados");
-  return { headers, rows, sheets, sheet, headerRow, warnings };
+  return { headers, rows, rowNumbers, sheets, sheet, headerRow, warnings };
 }

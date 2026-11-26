@@ -181,6 +181,9 @@ export function ordersRouter(db: PrismaClient) {
             include: {
               equipment: { include: { sector: true } },
               technician: true,
+              sapOrder: {
+                select: { number: true, fields: true, noteNumber: true },
+              },
               history: {
                 include: { user: { select: { name: true } } },
                 orderBy: { createdAt: "desc" },

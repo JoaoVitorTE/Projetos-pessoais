@@ -1,7 +1,8 @@
+import { SapReports } from "./SapReports";
 import { useState } from "react";
 import { useResource } from "../hooks/useResource";
 import { Empty, State } from "../components/OperationalUI";
-import { fmt, query, type Lookups } from "../types/operations";
+import { fmt, query, type Lookups, type User } from "../types/operations";
 type Report = {
   generatedAt: string;
   executive: string;
@@ -24,7 +25,36 @@ type Report = {
     overdue: boolean;
   }[];
 };
-export function ReportsPage({ lookups }: { lookups: Lookups }) {
+export function ReportsPage({
+  lookups,
+  user,
+}: {
+  lookups: Lookups;
+  user: User;
+}) {
+  const [sap, setSap] = useState(true);
+  return (
+    <>
+      <div className="tabs">
+        <button className={sap ? "" : "secondary"} onClick={() => setSap(true)}>
+          Horas e notas SAP
+        </button>
+        <button
+          className={sap ? "secondary" : ""}
+          onClick={() => setSap(false)}
+        >
+          Preventivas
+        </button>
+      </div>
+      {sap ? (
+        <SapReports lookups={lookups} user={user} />
+      ) : (
+        <PreventiveReports lookups={lookups} />
+      )}
+    </>
+  );
+}
+function PreventiveReports({ lookups }: { lookups: Lookups }) {
   const [from, setFrom] = useState(""),
     [to, setTo] = useState(""),
     [sectorId, setSector] = useState(""),

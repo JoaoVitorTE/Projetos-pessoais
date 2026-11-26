@@ -117,8 +117,8 @@ export const navigation: { id: string; label: string; items: Entry[] }[] = [
       },
       {
         id: "reports",
-        label: "Relatório de preventivas",
-        description: "Vencimentos em PDF e Excel",
+        label: "Relatórios",
+        description: "Horas SAP, notas e preventivas em PDF e Excel",
         icon: FileBarChart,
       },
       {

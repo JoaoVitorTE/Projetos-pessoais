@@ -38,6 +38,11 @@ export type Page<T> = {
   pages: number;
 };
 export type Order = {
+  sapOrder?: {
+    number: string;
+    noteNumber: string | null;
+    fields: { columns: { header: string; value: string }[] };
+  } | null;
   id: string;
   version: number;
   equipmentId: string;

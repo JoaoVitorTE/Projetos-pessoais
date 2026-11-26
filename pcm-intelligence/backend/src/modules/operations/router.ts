@@ -143,6 +143,7 @@ export function createOperationsRouter(db: PrismaClient) {
       requireRole(res, planners);
       const body = equipmentBody.parse(req.body);
       const row = await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
         const existing = await tx.equipment.findUnique({
           where: { sectorId_tag: { sectorId: body.sectorId, tag: body.tag } },
         });

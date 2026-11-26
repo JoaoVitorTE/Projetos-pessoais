@@ -1,3 +1,5 @@
+import { sapWebhook, workbookRoutes } from "./modules/sap/router.js";
+import { sapReportRouter } from "./modules/sap/report.js";
 import { experienceRouter } from "./modules/experience/router.js";
 import { schedulingRouter } from "./modules/scheduling/router.js";
 import express, { type RequestHandler } from "express";
@@ -51,12 +53,19 @@ export function createApp(db: PrismaClient) {
       credentials: true,
     }),
     (req, res, next) => {
-      if (req.path === "/api/imports/upload")
+      if (
+        ["/api/sap/connection", "/api/sap/preview", "/api/sap/import"].includes(
+          req.path,
+        )
+      )
+        next();
+      else if (req.path === "/api/imports/upload")
         express.json({ limit: "4300kb" })(req, res, next);
       else express.json({ limit: "32kb" })(req, res, next);
     },
     cookieParser(),
   );
+  app.use("/api/sap", sapWebhook(db));
   app.use((req, res, next) => {
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
@@ -331,6 +340,8 @@ export function createApp(db: PrismaClient) {
   modules.use(experienceRouter(db));
   modules.use("/scheduling", schedulingRouter(db));
   modules.use("/imports", importsRouter(db));
+  modules.use("/sap", workbookRoutes(db));
+  modules.use(sapReportRouter(db));
   modules.use("/admin", administrationRouter(db));
   modules.use(intelligenceRouter(db));
   modules.use(createOperationsRouter(db));

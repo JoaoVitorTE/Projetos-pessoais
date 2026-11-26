@@ -63,6 +63,8 @@ model Equipment {
  sectorId String
  sector Sector @relation(fields: [sectorId], references: [id])
  interruptions Interruption[]
+ sapOrders SapOrder[]
+ sapNotes SapNote[]
  orders MaintenanceOrder[]
  plans MaintenancePlan[]
  @@index([sectorId, criticality])
@@ -103,6 +105,7 @@ model MaintenanceOrder {
  id String @id
  version Int @default(1)
  history OrderHistory[]
+ sapOrder SapOrder?
  equipmentId String
  equipment Equipment @relation(fields: [equipmentId], references: [id])
  technicianId String?
@@ -120,6 +123,7 @@ model MaintenanceOrder {
  assignments TechnicianAssignment[]
  services ThirdPartyService[]
  @@index([status, scheduledAt])
+ @@index([sapReference])
 }
 model TechnicianAssignment {
  id String @id @default(cuid())
@@ -382,4 +386,73 @@ model AssignmentHistory {
  notes String
  createdAt DateTime @default(now())
  @@index([assignmentId, createdAt])
+}
+
+model SapOrder {
+ number String @id
+ localOrderId String? @unique
+ localOrder MaintenanceOrder? @relation(fields: [localOrderId], references: [id], onDelete: Restrict)
+ equipmentId String?
+ equipment Equipment? @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+ noteNumber String?
+ baseDate DateTime? @db.Date
+ entryDate DateTime? @db.Date
+ workCenter String?
+ orderType String?
+ fields Json
+ @@index([noteNumber])
+ @@index([entryDate])
+ @@index([equipmentId])
+}
+
+model SapNote {
+ number String @id
+ orderNumber String?
+ equipmentId String?
+ equipment Equipment? @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+ date DateTime? @db.Date
+ receivedAt DateTime @default(now())
+ fields Json
+ @@index([orderNumber])
+ @@index([equipmentId])
+}
+
+model SapConfirmation {
+ key String @id
+ orderNumber String
+ personnelNumber String
+ technicianName String?
+ date DateTime? @db.Date
+ hours Decimal? @db.Decimal(24, 12)
+ review String?
+ reviewedAt DateTime?
+ supersededBy String?
+ fingerprint String
+ groupKey String
+ workCenter String?
+ orderType String?
+ fields Json
+ @@index([orderNumber])
+ @@index([date, personnelNumber])
+ @@index([groupKey])
+}
+
+model SapWorkbookSettings {
+ id Int @id @default(1)
+ mapping Json
+ actorId String
+}
+
+model SapWorkbookRun {
+ id String @id @default(cuid())
+ filename String
+ source String
+ fileId String?
+ digest String?
+ revision DateTime?
+ receivedAt DateTime @default(now())
+ updatedAt DateTime?
+ result Json
+ @@index([source, receivedAt])
+ @@index([source, fileId, revision])
 }

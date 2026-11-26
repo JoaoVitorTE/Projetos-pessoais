@@ -10,6 +10,8 @@ Nova experiência: página inicial com alertas e atalhos, cabeçalho suspenso po
 
 Nova versão: TAG obrigatória por setor, número opcional, exclusão/restauração com histórico e importação conjunta de preventivas, lubrificação e tarefas. Consulte [identificação e importação de tarefas](docs/EQUIPMENT-AND-TASKS.md).
 
+Consulte o guia da [planilha SAP de quatro abas, sincronização Microsoft 365 e relatório de horas por técnico](docs/PLANILHA-SAP.md). O [modelo Excel](sample-data/PCM-SAP.xlsx) também pode ser baixado no módulo de importação.
+
 ## Execução local no Windows (PowerShell)
 
 Pré-requisitos: Node.js 22 LTS, Docker Desktop com Linux containers e Git. No repositório, entre em `pcm-intelligence`.

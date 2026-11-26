@@ -475,6 +475,23 @@ function OrderDetail({ id, onClose }: { id: string; onClose: () => void }) {
             </p>
           )}
           <Badge status={data.data.status} />
+          {data.data.sapOrder && (
+            <details>
+              <summary>
+                Última exportação SAP · {data.data.sapOrder.number}
+              </summary>
+              <dl>
+                {data.data.sapOrder.fields.columns
+                  .filter((column) => column.value)
+                  .map((column, index) => (
+                    <div key={index}>
+                      <dt>{column.header || `Coluna ${index + 1}`}</dt>
+                      <dd>{column.value}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </details>
+          )}
           <ol className="timeline">
             {data.data.history?.map((x) => (
               <li key={x.id}>
