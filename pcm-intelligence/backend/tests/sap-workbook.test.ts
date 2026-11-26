@@ -143,7 +143,12 @@ afterAll(async () => {
     where: { id: { in: localOrderIds } },
   });
   await db.equipment.deleteMany({
-    where: { OR: [{ id: { in: createdIds } }, { tag: { startsWith: scope } }] },
+    where: {
+      OR: [
+        { id: { in: createdIds } },
+        { tag: { startsWith: scope.toUpperCase() } },
+      ],
+    },
   });
   const users = await db.user.findMany({ where: { name: scope } });
   const userIds = users.map(({ id }) => id);
