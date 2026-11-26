@@ -1,3 +1,14 @@
+import {
+  Activity,
+  BadgeCheck,
+  CalendarClock,
+  CalendarDays,
+  ClipboardList,
+  Factory,
+  Gauge,
+  Timer,
+  TriangleAlert,
+} from "lucide-react";
 import { useState } from "react";
 import {
   ResponsiveContainer,
@@ -70,25 +81,31 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
   );
   const d = resource.data;
   const cards = d
-    ? [
-        ["Equipamentos", d.indicators.equipment],
-        ["Operando agora", d.indicators.running],
-        ["Paradas / manutenção", d.indicators.stopped],
-        ["Interrupções no período", d.indicators.interruptions],
+    ? ([
+        ["Equipamentos", d.indicators.equipment, Factory],
+        ["Operando agora", d.indicators.running, Activity],
+        ["Paradas / manutenção", d.indicators.stopped, TriangleAlert],
+        ["Interrupções no período", d.indicators.interruptions, Timer],
         [
           "Parada acumulada",
           `${(d.indicators.downtimeMinutes / 60).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} h`,
+          Gauge,
         ],
-        ["OS abertas agora", d.indicators.openOrders],
-        ["Planos vencidos agora", d.indicators.overduePlans],
-        ["Planos nos próximos 7 dias", d.indicators.upcomingPlans],
+        ["OS abertas agora", d.indicators.openOrders, ClipboardList],
+        ["Planos vencidos agora", d.indicators.overduePlans, CalendarClock],
+        [
+          "Planos nos próximos 7 dias",
+          d.indicators.upcomingPlans,
+          CalendarDays,
+        ],
         [
           "Cumprimento observado",
           d.indicators.compliancePercent === null
             ? "Sem previsão"
             : d.indicators.compliancePercent + "%",
+          BadgeCheck,
         ],
-      ]
+      ] as const)
     : [];
   return (
     <>
@@ -120,12 +137,18 @@ export function Dashboard({ lookups }: { lookups: Lookups }) {
       <State {...resource} />
       {d && (
         <>
-          <div className="cards">
-            {cards.map(([label, value]) => (
-              <article className="card" key={label}>
-                <span>{label}</span>
-                <strong>{value}</strong>
-                <small>Calculado a partir dos registros</small>
+          <div
+            className="dashboard-indicators"
+            aria-label="Indicadores da manutenção"
+            role="group"
+          >
+            {cards.map(([label, value, Icon]) => (
+              <article className="dashboard-indicator" key={label}>
+                <Icon size={19} aria-hidden="true" />
+                <div>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
               </article>
             ))}
           </div>

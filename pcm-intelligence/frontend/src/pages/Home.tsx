@@ -96,7 +96,6 @@ export function HomePage({
   onNavigate: Navigate;
   onTutorial: () => void;
 }) {
-  const allowed = new Set(allowedEntries(user).map((e) => e.id));
   const shortcuts = allowedEntries(user).filter((e) =>
     [
       "orders",
@@ -148,26 +147,89 @@ export function HomePage({
     alertIcons = { critical: AlertTriangle, warning: Clock3 };
   return (
     <>
-      <div className="home-intro">
-        <div>
-          <h2>Visão da operação</h2>
-          <p>Pendências, agenda e próximos vencimentos em um só lugar.</p>
+      <div className="home-overview">
+        <div className="home-intro">
+          <div>
+            <h2>Visão da operação</h2>
+            <p>Ordens, programação da equipe e manutenção preventiva.</p>
+            <div className="row-actions">
+              <button
+                className="home-primary"
+                onClick={() => onNavigate("orders")}
+              >
+                <ClipboardList size={17} /> Ordens de serviço{" "}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+          <div className="home-refresh">
+            <span>
+              {data
+                ? "Atualizado em " + dateTime(data.asOf)
+                : loading
+                  ? "Buscando dados"
+                  : "Atualização indisponível"}
+            </span>
+            <button
+              className="secondary small"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              <RefreshCw size={15} />
+              Atualizar
+            </button>
+          </div>
         </div>
-        <div className="home-refresh">
-          <span>
-            {data
-              ? "Atualizado em " + dateTime(data.asOf)
-              : "Carregando informações"}
-          </span>
-          <button
-            className="secondary small"
-            onClick={onRefresh}
-            disabled={loading}
-          >
-            <RefreshCw size={15} />
-            Atualizar
-          </button>
-        </div>
+        {data && (
+          <section className="panel home-today">
+            <div className="block-heading">
+              <h2>
+                <CalendarClock size={19} /> Agenda de hoje
+              </h2>
+              <button
+                className="text-button"
+                onClick={() => onNavigate("scheduling")}
+              >
+                Abrir agenda
+                <ArrowRight size={14} />
+              </button>
+            </div>
+            {!data.today.length ? (
+              <div className="home-empty">
+                <CalendarClock size={31} />
+                <h3>Sem reservas abertas hoje</h3>
+                <p>As atividades confirmadas aparecem aqui.</p>
+              </div>
+            ) : (
+              <div className="today-list">
+                {data.today.slice(0, 3).map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => onNavigate("scheduling", { recordId: a.id })}
+                  >
+                    <span className="today-time">
+                      {clock(a.startsAt)}
+                      <small>{clock(a.endsAt)}</small>
+                    </span>
+                    <span>
+                      <b>
+                        {equipmentCode(
+                          lookups?.equipment.find(
+                            (e) => e.id === a.equipmentId,
+                          ) || { id: a.equipmentId },
+                        )}{" "}
+                        · {a.reference}
+                      </b>
+                      <small>{a.title}</small>
+                      <em>{a.technician}</em>
+                    </span>
+                    <ArrowUpRight size={14} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
       <State error={error} loading={loading} />
       {data && (
@@ -225,7 +287,7 @@ export function HomePage({
               </button>
             ))}
           </div>
-          <div className="home-columns">
+          <div className="home-columns home-worklist">
             <section className="panel home-attention">
               <div className="block-heading">
                 <div>
@@ -250,7 +312,7 @@ export function HomePage({
                 </div>
               ) : (
                 <div className="attention-list">
-                  {data.alerts.map((a) => {
+                  {data.alerts.slice(0, 5).map((a) => {
                     const Icon =
                       alertIcons[a.level as keyof typeof alertIcons] ||
                       AlertTriangle;
@@ -277,104 +339,43 @@ export function HomePage({
                       </button>
                     );
                   })}
-                  {data.counts.alerts > data.alerts.length && (
+                  {data.counts.alerts > Math.min(5, data.alerts.length) && (
                     <p className="muted">
-                      Exibindo {data.alerts.length} de {data.counts.alerts}{" "}
-                      registros com pendências. Consulte as áreas para
-                      acompanhar todos.
+                      Exibindo {Math.min(5, data.alerts.length)} de{" "}
+                      {data.counts.alerts} registros com pendências. Consulte as
+                      áreas para acompanhar todos.
                     </p>
                   )}
                 </div>
               )}
             </section>
-            <section className="panel home-today">
+            <section className="home-shortcuts-section">
               <div className="block-heading">
                 <div>
-                  <h2>Agenda de hoje</h2>
+                  <h2>Acesso rápido</h2>
                 </div>
-                <button
-                  className="text-button"
-                  onClick={() => onNavigate("scheduling")}
-                >
-                  Abrir agenda
-                  <ArrowRight size={14} />
-                </button>
+                <span className="muted">
+                  {data.counts.equipment} equipamentos cadastrados
+                </span>
               </div>
-              {!data.today.length ? (
-                <div className="home-empty">
-                  <CalendarClock size={31} />
-                  <h3>Sem reservas abertas hoje</h3>
-                  <p>
-                    Atividades confirmadas na agenda aparecerão aqui com seus
-                    horários e responsáveis.
-                  </p>
-                  {allowed.has("scheduling") && (
-                    <button
-                      className="secondary small"
-                      onClick={() => onNavigate("scheduling")}
-                    >
-                      Acessar programação
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="today-list">
-                  {data.today.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() =>
-                        onNavigate("scheduling", { recordId: a.id })
-                      }
-                    >
-                      <span className="today-time">
-                        {clock(a.startsAt)}
-                        <small>{clock(a.endsAt)}</small>
-                      </span>
-                      <span>
-                        <b>
-                          {equipmentCode(
-                            lookups?.equipment.find(
-                              (e) => e.id === a.equipmentId,
-                            ) || { id: a.equipmentId },
-                          )}{" "}
-                          · {a.reference}
-                        </b>
-                        <small>{a.title}</small>
-                        <em>{a.technician}</em>
-                      </span>
-                      <ArrowUpRight size={14} />
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="home-shortcuts">
+                {shortcuts.map((e) => (
+                  <button
+                    key={e.id}
+                    className="shortcut-card"
+                    onClick={() => onNavigate(e.id)}
+                    aria-label={"Acessar " + e.label.toLowerCase()}
+                  >
+                    <span>
+                      <e.icon size={22} />
+                    </span>
+                    <strong>{e.label}</strong>
+                    <ArrowUpRight size={14} />
+                  </button>
+                ))}
+              </div>
             </section>
           </div>
-          <section className="home-shortcuts-section">
-            <div className="block-heading">
-              <div>
-                <h2>Acesso rápido</h2>
-              </div>
-              <span className="muted">
-                {data.counts.equipment} equipamentos cadastrados
-              </span>
-            </div>
-            <div className="home-shortcuts">
-              {shortcuts.map((e) => (
-                <button
-                  key={e.id}
-                  className="shortcut-card"
-                  onClick={() => onNavigate(e.id)}
-                  aria-label={"Acessar " + e.label.toLowerCase()}
-                >
-                  <span>
-                    <e.icon size={22} />
-                  </span>
-                  <strong>{e.label}</strong>
-                  <ArrowUpRight size={14} />
-                </button>
-              ))}
-            </div>
-          </section>
           {pending.length > 0 && (
             <section className="setup-banner">
               <div className="setup-heading">
