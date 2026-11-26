@@ -106,8 +106,8 @@ export function EquipmentPage({
       <div className="action-row">
         <p>
           {deleted
-            ? "Cadastros excluídos ficam disponíveis para consulta e restauração."
-            : "Cadastre, corrija ou exclua equipamentos com rastreabilidade."}
+            ? "Cadastros arquivados ficam disponíveis para consulta e reativação."
+            : "Cadastre, atualize e gerencie equipamentos."}
         </p>
         {canPlan(user) && !deleted && (
           <button onClick={() => setEdit(null)}>
@@ -134,7 +134,7 @@ export function EquipmentPage({
           }}
         >
           <Trash2 size={15} />
-          Excluídos
+          Arquivados
         </button>
       </div>
       {data.data !== null && data.data.pendingTags > 0 && !deleted && (
@@ -190,7 +190,7 @@ export function EquipmentPage({
             onClick={() => setRemoving([...selected.values()])}
           >
             <Trash2 size={14} />
-            Excluir selecionados
+            Arquivar selecionados
           </button>
         </div>
       )}
@@ -234,7 +234,7 @@ export function EquipmentPage({
                   "Equipamento",
                   "Setor",
                   "Criticidade",
-                  deleted ? "Excluído em" : "Situação",
+                  deleted ? "Arquivado em" : "Situação",
                   "Ações",
                 ].map((h) => (
                   <th key={h}>{h}</th>
@@ -297,17 +297,24 @@ export function EquipmentPage({
                               aria-label={"Excluir " + equipmentCode(e)}
                             >
                               <Trash2 size={13} />
-                              Excluir
+                              Arquivar ou excluir
                             </button>
                           </>
                         ) : (
-                          <button
-                            className="small secondary"
-                            onClick={() => setRestoring(e)}
-                          >
-                            <RotateCcw size={13} />
-                            Restaurar
-                          </button>
+                          <>
+                            <button
+                              className="small secondary"
+                              onClick={() => setRestoring(e)}
+                            >
+                              <RotateCcw size={13} /> Reativar
+                            </button>
+                            <button
+                              className="small secondary danger-text"
+                              onClick={() => setRemoving([e])}
+                            >
+                              Excluir
+                            </button>
+                          </>
                         ))}
                       <button
                         className="small secondary"
@@ -342,11 +349,11 @@ export function EquipmentPage({
       {removing && (
         <EquipmentRemoval
           rows={removing}
+          archived={deleted}
           onClose={() => setRemoving(null)}
           onSaved={() => {
             setNotice(
-              removing.length +
-                " cadastro(s) excluído(s). Você pode restaurar na aba Excluídos.",
+              removing.length + " cadastro(s) processado(s) com auditoria.",
             );
             setRemoving(null);
             setPage(1);
@@ -361,7 +368,7 @@ export function EquipmentPage({
           onClose={() => setRestoring(null)}
           onSaved={() => {
             setRestoring(null);
-            setNotice("Equipamento restaurado com auditoria.");
+            setNotice("Equipamento reativado com auditoria.");
             change();
           }}
         />
@@ -544,29 +551,36 @@ function EquipmentForm({
 function EquipmentRemoval({
   rows,
   restore = false,
+  archived = false,
   onClose,
   onSaved,
 }: {
   rows: Equipment[];
   restore?: boolean;
+  archived?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [reason, setReason] = useState(""),
+  const [archive, setArchive] = useState(!archived),
+    [reason, setReason] = useState(""),
     [confirmation, setConfirmation] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
     <Modal
       title={
-        restore ? "Restaurar equipamento" : "Excluir cadastros de equipamentos"
+        restore
+          ? "Reativar equipamento"
+          : archive
+            ? "Arquivar equipamentos"
+            : "Excluir equipamento definitivamente"
       }
       onClose={onClose}
     >
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!restore && confirmation !== "EXCLUIR") return;
+          if (!restore && !archive && confirmation !== "EXCLUIR") return;
           setBusy(true);
           setError("");
           try {
@@ -578,14 +592,22 @@ function EquipmentRemoval({
                   body: JSON.stringify({ version: rows[0].version, reason }),
                 },
               );
-            else
-              await api("/equipment/bulk-delete", {
+            else if (archive)
+              await api("/equipment/bulk-archive", {
                 method: "POST",
                 body: JSON.stringify({
                   items: rows.map(({ id, version }) => ({ id, version })),
                   reason,
                 }),
               });
+            else
+              await api(
+                "/equipment/" + encodeURIComponent(rows[0].id) + "/permanent",
+                {
+                  method: "DELETE",
+                  body: JSON.stringify({ version: rows[0].version, reason }),
+                },
+              );
             onSaved();
           } catch (e) {
             setError((e as Error).message);
@@ -597,7 +619,9 @@ function EquipmentRemoval({
         <p>
           {restore
             ? "O equipamento voltará ao cadastro e às opções de seleção."
-            : "Os equipamentos sairão do cadastro disponível e dos indicadores ativos. O histórico será preservado, e a restauração ficará na aba Excluídos."}
+            : archive
+              ? "Os equipamentos sairão do cadastro ativo. O histórico ficará disponível na aba Arquivados."
+              : "A exclusão definitiva só é possível para cadastros sem vínculos."}
         </p>
         <ul className="removal-items">
           {rows.slice(0, 8).map((r) => (
@@ -612,11 +636,29 @@ function EquipmentRemoval({
             <li>Mais {rows.length - 8} equipamentos selecionados.</li>
           )}
         </ul>
-        {!restore && (
-          <p className="form-guidance">
-            OS abertas, planos ativos ou interrupções abertas precisam ser
-            regularizados antes da exclusão.
-          </p>
+        {!restore && !archived && rows.length === 1 && (
+          <fieldset>
+            <legend>O que deseja fazer com o cadastro?</legend>
+            {(
+              [
+                [true, "Arquivar e preservar o histórico"],
+                [false, "Excluir definitivamente"],
+              ] as const
+            ).map(([value, label]) => (
+              <label key={String(value)} className="check-label">
+                <input
+                  type="radio"
+                  name="equipmentRemoval"
+                  checked={archive === value}
+                  onChange={() => {
+                    setArchive(Boolean(value));
+                    setError("");
+                  }}
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
         )}
         <label>
           Motivo
@@ -634,7 +676,7 @@ function EquipmentRemoval({
             onChange={(e) => setReason(e.target.value)}
           />
         </label>
-        {!restore && (
+        {!restore && !archive && (
           <label>
             Digite EXCLUIR para confirmar
             <input
@@ -662,13 +704,17 @@ function EquipmentRemoval({
           </button>
           <button
             className={restore ? "" : "danger-button"}
-            disabled={busy || (!restore && confirmation !== "EXCLUIR")}
+            disabled={
+              busy || (!restore && !archive && confirmation !== "EXCLUIR")
+            }
           >
             {busy
               ? "Salvando…"
               : restore
-                ? "Restaurar equipamento"
-                : "Excluir " + rows.length + " equipamento(s)"}
+                ? "Reativar equipamento"
+                : archive
+                  ? "Arquivar"
+                  : "Excluir definitivamente"}
           </button>
         </div>
       </form>
@@ -694,7 +740,9 @@ function EquipmentHistory({
   const labels: Record<string, string> = {
     EQUIPMENT_CREATED: "Cadastro criado",
     EQUIPMENT_UPDATED: "Cadastro alterado",
-    EQUIPMENT_DELETED: "Cadastro excluído",
+    EQUIPMENT_DELETED: "Cadastro arquivado",
+    EQUIPMENT_ARCHIVED: "Cadastro arquivado",
+    EQUIPMENT_PURGED: "Cadastro excluído definitivamente",
     EQUIPMENT_RESTORED: "Cadastro restaurado",
     IMPORT_APPLIED: "Importação aplicada",
     IMPORT_REVERTED: "Importação desfeita",
