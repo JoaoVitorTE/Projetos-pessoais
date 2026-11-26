@@ -69,7 +69,12 @@ export function OperationalShell({
         mode={lookups.data?.mode}
         alertCount={home.data?.counts.alerts || 0}
       />
-      <main className="workspace-content" id="workspace-main" tabIndex={-1}>
+      <main
+        className="workspace-content"
+        id="workspace-main"
+        data-module={tab}
+        tabIndex={-1}
+      >
         <div className="workspace-breadcrumb">
           <button onClick={() => navigate("home")}>PCM Intelligence</button>
           <ChevronRight size={13} />

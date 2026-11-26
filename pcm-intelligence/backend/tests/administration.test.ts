@@ -16,7 +16,7 @@ let admin: string[],
   sector: any;
 const users: string[] = [];
 function call(
-  method: "get" | "post" | "patch",
+  method: "get" | "post" | "patch" | "delete",
   path: string,
   body?: unknown,
   cookie = admin,
@@ -76,6 +76,150 @@ describe("Cadastros, permissões e rastreabilidade", () => {
     expect((await call("post", "/admin/technicians", {}, viewer)).status).toBe(
       403,
     );
+  });
+  it("remove cadastros livres e bloqueia vínculos e papéis indevidos", async () => {
+    const createdSector = await call(
+      "post",
+      "/admin/sectors",
+      { name: tag + " Removível" },
+      planner,
+    );
+    expect(createdSector.status).toBe(201);
+    const sectorPath = "/admin/sectors/" + createdSector.body.id;
+    expect((await call("delete", sectorPath, undefined, viewer)).status).toBe(
+      403,
+    );
+    const equipment = await call(
+      "post",
+      "/equipment",
+      {
+        tag: tag + "-EX",
+        name: "Equipamento de teste",
+        sectorId: createdSector.body.id,
+        criticality: 2,
+        status: "UNKNOWN",
+      },
+      planner,
+    );
+    expect(equipment.status).toBe(201);
+    try {
+      const blocked = await call("delete", sectorPath, undefined, planner);
+      expect(blocked.status).toBe(409);
+      expect(blocked.body.error).toContain("equipamento");
+    } finally {
+      await db.equipment.delete({ where: { id: equipment.body.id } });
+    }
+    expect((await call("delete", sectorPath, undefined, planner)).body).toEqual(
+      { outcome: "deleted" },
+    );
+
+    const createdTech = await call(
+      "post",
+      "/admin/technicians",
+      {
+        name: tag + " Desvinculado",
+        specialty: "Inspeção de teste",
+        active: true,
+      },
+      planner,
+    );
+    expect(createdTech.status).toBe(201);
+    expect(
+      (
+        await call(
+          "delete",
+          "/admin/technicians/" + createdTech.body.id,
+          undefined,
+          planner,
+        )
+      ).body,
+    ).toEqual({ outcome: "deleted" });
+
+    const created = await call("post", "/admin/users", {
+      name: tag + " Conta removível",
+      email: tag.toLowerCase() + "-removal@example.test",
+      active: true,
+      role: "VIEWER",
+      technicianId: null,
+    });
+    expect(created.status).toBe(201);
+    users.push(created.body.user.id);
+    const accountPath = "/admin/users/" + created.body.user.id;
+    expect((await call("delete", accountPath, undefined, planner)).status).toBe(
+      403,
+    );
+    expect((await call("delete", accountPath)).body).toEqual({
+      outcome: "deleted",
+    });
+    expect(
+      await db.user.findUnique({ where: { id: created.body.user.id } }),
+    ).toBeNull();
+  });
+  it("desativa uma conta com histórico e preserva a autoria", async () => {
+    const created = await call("post", "/admin/users", {
+      name: tag + " Conta histórica",
+      email: tag.toLowerCase() + "-history@example.test",
+      active: true,
+      role: "VIEWER",
+      technicianId: null,
+    });
+    expect(created.status).toBe(201);
+    const id = created.body.user.id;
+    users.push(id);
+    const event = await db.auditLog.create({
+      data: {
+        userId: id,
+        action: "TEST_ACTIVITY",
+        entity: "User",
+        metadata: {},
+      },
+    });
+    expect((await call("delete", "/admin/users/" + id)).body).toEqual({
+      outcome: "deactivated",
+    });
+    expect((await db.user.findUniqueOrThrow({ where: { id } })).active).toBe(
+      false,
+    );
+    expect(
+      (await db.auditLog.findUniqueOrThrow({ where: { id: event.id } })).userId,
+    ).toBe(id);
+  });
+  it("renomeia e remove configurações de importação e requisitos documentais", async () => {
+    const source = await call(
+      "post",
+      "/imports/sources",
+      {
+        name: tag + " Origem",
+        system: "GENERIC",
+        scope: tag,
+        target: "EQUIPMENT",
+        isDemo: true,
+      },
+      planner,
+    );
+    expect(source.status).toBe(201);
+    const sourcePath = "/imports/sources/" + source.body.id;
+    expect(
+      (await call("patch", sourcePath, { name: tag + " Revisada" }, planner))
+        .body,
+    ).toMatchObject({ name: tag + " Revisada", scope: tag });
+    expect((await call("delete", sourcePath, undefined, viewer)).status).toBe(
+      403,
+    );
+    expect((await call("delete", sourcePath, undefined, planner)).body).toEqual(
+      { outcome: "deleted" },
+    );
+
+    const requirement = await call("post", "/document-requirements", {
+      name: tag + " Requisito",
+    });
+    expect(requirement.status).toBe(201);
+    const path = "/document-requirements/" + requirement.body.id;
+    expect(
+      (await call("patch", path, { name: tag + " Documento" })).body,
+    ).toMatchObject({ name: tag + " Documento", active: true });
+    expect((await call("delete", path, undefined, planner)).status).toBe(403);
+    expect((await call("delete", path)).body).toEqual({ outcome: "deleted" });
   });
   it("cria usuário com senha temporária sem expor o hash", async () => {
     const r = await call("post", "/admin/users", {

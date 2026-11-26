@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   Home,
   LayoutDashboard,
@@ -166,6 +172,23 @@ export const allowedEntries = (user: User) =>
   navigation
     .flatMap((g) => g.items)
     .filter((e) => !e.roles || e.roles.includes(user.role));
+function opensOnHover(event: ReactPointerEvent) {
+  return (
+    event.pointerType === "mouse" &&
+    matchMedia("(hover: hover) and (pointer: fine)").matches
+  );
+}
+
+function opensOnActivation(event: MouseEvent) {
+  const pointer = event.nativeEvent as PointerEvent;
+  return (
+    event.detail === 0 ||
+    pointer.pointerType === "touch" ||
+    pointer.pointerType === "pen" ||
+    !matchMedia("(hover: hover) and (pointer: fine)").matches
+  );
+}
+
 export function FloatingNavigation({
   user,
   active,
@@ -215,6 +238,10 @@ export function FloatingNavigation({
     };
     const escape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        document.activeElement
+          ?.closest(".section-dropdown")
+          ?.parentElement?.querySelector("button")
+          ?.focus();
         setGroup("");
         setAccount(false);
       }
@@ -263,45 +290,76 @@ export function FloatingNavigation({
           </button>
         </div>
         <nav className="header-sections" aria-label="Seções principais">
-          {groups.map((g) => (
-            <div className="section-menu" key={g.id}>
-              <button
-                className={
-                  "section-trigger" +
-                  (activeGroup?.id === g.id ? " selected" : "")
-                }
-                aria-expanded={group === g.id}
-                aria-controls={"nav-section-" + g.id}
-                onClick={() => {
-                  setGroup(group === g.id ? "" : g.id);
-                  setAccount(false);
+          {groups.map((g) => {
+            const Icon = g.items[0].icon;
+            return (
+              <div
+                className="section-menu"
+                key={g.id}
+                onPointerEnter={(event) => {
+                  if (opensOnHover(event)) {
+                    setGroup(g.id);
+                    setAccount(false);
+                  }
+                }}
+                onPointerLeave={(event) => {
+                  if (
+                    opensOnHover(event) &&
+                    !event.currentTarget.querySelector(
+                      ".section-dropdown :focus",
+                    )
+                  )
+                    setGroup((current) => (current === g.id ? "" : current));
+                }}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget))
+                    setGroup((current) => (current === g.id ? "" : current));
                 }}
               >
-                {g.label}
-                <ChevronDown size={13} />
-              </button>
-              {group === g.id && (
-                <div className="section-dropdown" id={"nav-section-" + g.id}>
-                  {g.items.map((e) => (
-                    <button
-                      key={e.id}
-                      onClick={() => go(e.id)}
-                      aria-current={active === e.id ? "page" : undefined}
-                    >
-                      <span className="dropdown-icon">
-                        <e.icon size={18} />
-                      </span>
-                      <span>
-                        <b>{e.label}</b>
-                        <small>{e.description}</small>
-                      </span>
-                      {active === e.id && <span className="current-marker" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  className={
+                    "section-trigger" +
+                    (activeGroup?.id === g.id ? " selected" : "")
+                  }
+                  aria-expanded={group === g.id}
+                  aria-controls={"nav-section-" + g.id}
+                  onClick={(event) => {
+                    if (!opensOnActivation(event)) return;
+                    setGroup(group === g.id ? "" : g.id);
+                    setAccount(false);
+                  }}
+                >
+                  <Icon size={17} aria-hidden="true" />
+                  <span>{g.label}</span>
+                  <ChevronDown
+                    className="nav-chevron"
+                    size={13}
+                    aria-hidden="true"
+                  />
+                </button>
+                {group === g.id && (
+                  <div className="section-dropdown" id={"nav-section-" + g.id}>
+                    {g.items.map((e) => (
+                      <button
+                        key={e.id}
+                        onClick={() => go(e.id)}
+                        aria-current={active === e.id ? "page" : undefined}
+                      >
+                        <span className="dropdown-icon">
+                          <e.icon size={18} />
+                        </span>
+                        <span>
+                          <b>{e.label}</b>
+                          <small>{e.description}</small>
+                        </span>
+                        {active === e.id && <span className="current-marker" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
         <div className="header-actions">
           {mode === "demo" && (
@@ -330,12 +388,32 @@ export function FloatingNavigation({
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <div className="account-menu">
+          <div
+            className="account-menu"
+            onPointerEnter={(event) => {
+              if (opensOnHover(event)) {
+                setAccount(true);
+                setGroup("");
+              }
+            }}
+            onPointerLeave={(event) => {
+              if (
+                opensOnHover(event) &&
+                !event.currentTarget.querySelector(".account-dropdown :focus")
+              )
+                setAccount(false);
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget))
+                setAccount(false);
+            }}
+          >
             <button
               className="account-trigger"
               aria-label="Abrir menu da conta"
               aria-expanded={account}
-              onClick={() => {
+              onClick={(event) => {
+                if (!opensOnActivation(event)) return;
                 setAccount(!account);
                 setGroup("");
               }}

@@ -150,8 +150,8 @@ export function HomePage({
     <>
       <div className="home-intro">
         <div>
-          <h2>Panorama da manutenção</h2>
-          <p>Acompanhe pendências, programação e próximos vencimentos.</p>
+          <h2>Visão da operação</h2>
+          <p>Pendências, agenda e próximos vencimentos em um só lugar.</p>
         </div>
         <div className="home-refresh">
           <span>
@@ -225,73 +225,10 @@ export function HomePage({
               </button>
             ))}
           </div>
-          {pending.length > 0 && (
-            <section className="setup-banner">
-              <div className="setup-heading">
-                <span className="setup-symbol">
-                  <Plus size={21} />
-                </span>
-                <div>
-                  <h2>Prepare sua operação</h2>
-                  <p>
-                    {steps.length - pending.length} de {steps.length} etapas
-                    preparadas. Os cadastros aparecem aqui conforme são
-                    concluídos.
-                  </p>
-                </div>
-                <button className="secondary small" onClick={onTutorial}>
-                  <BookOpen size={15} />
-                  Ver tutorial
-                </button>
-              </div>
-              <div className="setup-steps">
-                {steps.map((s, i) => (
-                  <button
-                    className={s.done ? "done" : ""}
-                    key={s.title}
-                    onClick={() => onNavigate(s.module, s.options)}
-                  >
-                    <span>{s.done ? <CheckCircle2 size={17} /> : i + 1}</span>
-                    <strong>{s.title}</strong>
-                    <small>{s.description}</small>
-                    <ArrowUpRight size={13} />
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-          <section className="home-shortcuts-section">
-            <div className="block-heading">
-              <div>
-                <span className="section-kicker">ACESSO RÁPIDO</span>
-                <h2>Sua rotina, a um clique</h2>
-              </div>
-              <span className="muted">
-                {data.counts.equipment} equipamentos cadastrados
-              </span>
-            </div>
-            <div className="home-shortcuts">
-              {shortcuts.map((e) => (
-                <button
-                  key={e.id}
-                  className="shortcut-card"
-                  onClick={() => onNavigate(e.id)}
-                  aria-label={"Acessar " + e.label.toLowerCase()}
-                >
-                  <span>
-                    <e.icon size={22} />
-                  </span>
-                  <strong>{e.label}</strong>
-                  <ArrowUpRight size={14} />
-                </button>
-              ))}
-            </div>
-          </section>
           <div className="home-columns">
             <section className="panel home-attention">
               <div className="block-heading">
                 <div>
-                  <span className="section-kicker">PRIORIDADES</span>
                   <h2>Precisa de atenção</h2>
                 </div>
                 <button
@@ -353,7 +290,6 @@ export function HomePage({
             <section className="panel home-today">
               <div className="block-heading">
                 <div>
-                  <span className="section-kicker">PROGRAMAÇÃO</span>
                   <h2>Agenda de hoje</h2>
                 </div>
                 <button
@@ -413,6 +349,67 @@ export function HomePage({
               )}
             </section>
           </div>
+          <section className="home-shortcuts-section">
+            <div className="block-heading">
+              <div>
+                <h2>Acesso rápido</h2>
+              </div>
+              <span className="muted">
+                {data.counts.equipment} equipamentos cadastrados
+              </span>
+            </div>
+            <div className="home-shortcuts">
+              {shortcuts.map((e) => (
+                <button
+                  key={e.id}
+                  className="shortcut-card"
+                  onClick={() => onNavigate(e.id)}
+                  aria-label={"Acessar " + e.label.toLowerCase()}
+                >
+                  <span>
+                    <e.icon size={22} />
+                  </span>
+                  <strong>{e.label}</strong>
+                  <ArrowUpRight size={14} />
+                </button>
+              ))}
+            </div>
+          </section>
+          {pending.length > 0 && (
+            <section className="setup-banner">
+              <div className="setup-heading">
+                <span className="setup-symbol">
+                  <Plus size={21} />
+                </span>
+                <div>
+                  <h2>Prepare sua operação</h2>
+                  <p>
+                    {steps.length - pending.length} de {steps.length} etapas
+                    preparadas. Os cadastros aparecem aqui conforme são
+                    concluídos.
+                  </p>
+                </div>
+                <button className="secondary small" onClick={onTutorial}>
+                  <BookOpen size={15} />
+                  Ver tutorial
+                </button>
+              </div>
+              <div className="setup-steps">
+                {steps.map((s, i) => (
+                  <button
+                    className={s.done ? "done" : ""}
+                    key={s.title}
+                    onClick={() => onNavigate(s.module, s.options)}
+                  >
+                    <span>{s.done ? <CheckCircle2 size={17} /> : i + 1}</span>
+                    <strong>{s.title}</strong>
+                    <small>{s.description}</small>
+                    <ArrowUpRight size={13} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           <div className="home-columns home-bottom">
             <section className="panel home-upcoming">
               <div className="block-heading">

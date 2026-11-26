@@ -91,6 +91,69 @@ export function importsRouter(db: PrismaClient) {
       res.status(201).json(source);
     }),
   );
+  r.patch(
+    "/sources/:id",
+    run(async (req, res) => {
+      const data = z
+        .object({
+          name: z.string().trim().min(3).max(120).optional(),
+          active: z.boolean().optional(),
+        })
+        .strict()
+        .refine((value) => Object.keys(value).length > 0)
+        .parse(req.body);
+      const after = await db.$transaction(async (tx) => {
+        const before = must(
+          await tx.importSource.findUnique({ where: { id: req.params.id } }),
+        );
+        const after = await tx.importSource.update({
+          where: { id: before.id },
+          data,
+        });
+        await audit(tx, actor(res), "IMPORT_SOURCE_UPDATED", "ImportSource", {
+          before,
+          after,
+        });
+        return after;
+      });
+      res.json(after);
+    }),
+  );
+  r.delete(
+    "/sources/:id",
+    run(async (req, res) => {
+      const id = req.params.id;
+      const outcome = await db.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "ImportSource" WHERE id = ${id} FOR UPDATE`;
+        const before = must(
+          await tx.importSource.findUnique({
+            where: { id },
+            include: { _count: { select: { batches: true, records: true } } },
+          }),
+        );
+        if (before._count.batches || before._count.records) {
+          const after = await tx.importSource.update({
+            where: { id },
+            data: { active: false },
+          });
+          await audit(
+            tx,
+            actor(res),
+            "IMPORT_SOURCE_DEACTIVATED",
+            "ImportSource",
+            { before, after },
+          );
+          return "deactivated";
+        }
+        await tx.importSource.delete({ where: { id } });
+        await audit(tx, actor(res), "IMPORT_SOURCE_DELETED", "ImportSource", {
+          before,
+        });
+        return "deleted";
+      });
+      res.json({ outcome });
+    }),
+  );
   r.get(
     "/sample/:target",
     run(async (req, res) => {
@@ -299,6 +362,11 @@ export function importsRouter(db: PrismaClient) {
         select: { id: true, createdAt: true },
       });
       const batch = await db.$transaction(async (tx) => {
+        const [configured] = await tx.$queryRaw<
+          { active: boolean }[]
+        >`SELECT active FROM "ImportSource" WHERE id = ${source.id} FOR SHARE`;
+        if (!configured?.active)
+          throw new HttpError(409, "Origem inativa ou removida");
         const batch = await tx.importBatch.create({
           data: {
             source: source.system,

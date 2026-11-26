@@ -87,7 +87,14 @@ export function thirdPartiesRouter(db: PrismaClient) {
     "/document-requirements/:id",
     run(async (req, res) => {
       requireRole(res, ["ADMIN"]);
-      const data = z.object({ active: z.boolean() }).strict().parse(req.body);
+      const data = z
+        .object({
+          name: z.string().trim().min(3).max(160).optional(),
+          active: z.boolean().optional(),
+        })
+        .strict()
+        .refine((value) => Object.keys(value).length > 0)
+        .parse(req.body);
       const row = await db.$transaction(async (tx) => {
         const row = await tx.documentRequirement.update({
           where: { id: req.params.id },
@@ -103,6 +110,46 @@ export function thirdPartiesRouter(db: PrismaClient) {
         return row;
       });
       res.json(row);
+    }),
+  );
+  r.delete(
+    "/document-requirements/:id",
+    run(async (req, res) => {
+      requireRole(res, ["ADMIN"]);
+      const id = req.params.id;
+      const outcome = await db.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "DocumentRequirement" WHERE id = ${id} FOR UPDATE`;
+        const before = must(
+          await tx.documentRequirement.findUnique({
+            where: { id },
+            include: { _count: { select: { documents: true } } },
+          }),
+        );
+        if (before._count.documents) {
+          const after = await tx.documentRequirement.update({
+            where: { id },
+            data: { active: false },
+          });
+          await audit(
+            tx,
+            actor(res),
+            "REQUIREMENT_DEACTIVATED",
+            "DocumentRequirement",
+            { before, after },
+          );
+          return "deactivated";
+        }
+        await tx.documentRequirement.delete({ where: { id } });
+        await audit(
+          tx,
+          actor(res),
+          "REQUIREMENT_DELETED",
+          "DocumentRequirement",
+          { before },
+        );
+        return "deleted";
+      });
+      res.json({ outcome });
     }),
   );
   r.get(

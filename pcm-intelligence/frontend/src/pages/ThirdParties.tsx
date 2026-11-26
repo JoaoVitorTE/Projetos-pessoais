@@ -369,6 +369,9 @@ function ServiceForm({
 function Requirements({ onClose }: { onClose: () => void }) {
   const data = useResource<Requirement[]>("/document-requirements"),
     [name, setName] = useState(""),
+    [editing, setEditing] = useState<Requirement | null>(null),
+    [removing, setRemoving] = useState<Requirement | null>(null),
+    [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function toggle(item: Requirement) {
@@ -400,27 +403,101 @@ function Requirements({ onClose }: { onClose: () => void }) {
             <span>
               {x.name} · {x.active ? "Ativo" : "Inativo"}
             </span>
-            <button
-              disabled={busy}
-              className="secondary small"
-              onClick={() => toggle(x)}
-            >
-              {x.active ? "Desativar" : "Ativar"}
-            </button>
+            <div className="row-actions">
+              <button
+                disabled={busy}
+                className="secondary small"
+                onClick={() => {
+                  setEditing(x);
+                  setName(x.name);
+                  setRemoving(null);
+                }}
+              >
+                Editar
+              </button>
+              <button
+                disabled={busy}
+                className="secondary small danger-text"
+                onClick={() => {
+                  setRemoving(x);
+                  setEditing(null);
+                  setName("");
+                }}
+              >
+                Remover
+              </button>
+              <button
+                disabled={busy}
+                className="secondary small"
+                onClick={() => toggle(x)}
+              >
+                {x.active ? "Desativar" : "Ativar"}
+              </button>
+            </div>
           </li>
         ))}
       </ul>
+      {notice && <p role="status">{notice}</p>}
+      {removing && (
+        <section>
+          <p>
+            Remover <strong>{removing.name}</strong>? Se já houver documentos
+            vinculados, o requisito será desativado.
+          </p>
+          <div className="row-actions">
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => setRemoving(null)}
+            >
+              Cancelar
+            </button>
+            <button
+              className="danger-button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const { outcome } = await api(
+                    "/document-requirements/" + encodeURIComponent(removing.id),
+                    { method: "DELETE" },
+                  );
+                  setNotice(
+                    outcome === "deactivated"
+                      ? "Requisito desativado. O histórico foi preservado."
+                      : "Requisito removido.",
+                  );
+                  setRemoving(null);
+                  data.refresh();
+                } catch (cause) {
+                  setError((cause as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Confirmar remoção
+            </button>
+          </div>
+        </section>
+      )}
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           setError("");
           try {
-            await api("/document-requirements", {
-              method: "POST",
-              body: JSON.stringify({ name }),
-            });
+            await api(
+              "/document-requirements" +
+                (editing ? "/" + encodeURIComponent(editing.id) : ""),
+              {
+                method: editing ? "PATCH" : "POST",
+                body: JSON.stringify({ name }),
+              },
+            );
             setName("");
+            setEditing(null);
             data.refresh();
           } catch (e) {
             setError((e as Error).message);
@@ -430,9 +507,9 @@ function Requirements({ onClose }: { onClose: () => void }) {
         }}
       >
         <label>
-          Novo requisito
+          {editing ? "Nome do requisito" : "Novo requisito"}
           <input
-            aria-label="Novo requisito"
+            aria-label={editing ? "Nome do requisito" : "Novo requisito"}
             required
             minLength={3}
             maxLength={160}
@@ -440,7 +517,24 @@ function Requirements({ onClose }: { onClose: () => void }) {
             onChange={(e) => setName(e.target.value)}
           />
         </label>
-        <button disabled={busy}>Adicionar requisito</button>
+        <div className="row-actions">
+          {editing && (
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy}
+              onClick={() => {
+                setEditing(null);
+                setName("");
+              }}
+            >
+              Cancelar edição
+            </button>
+          )}
+          <button disabled={busy || !!removing}>
+            {editing ? "Salvar requisito" : "Adicionar requisito"}
+          </button>
+        </div>
       </form>
     </Modal>
   );

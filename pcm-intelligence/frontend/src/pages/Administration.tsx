@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   KeyRound,
   Mail,
+  Trash2,
 } from "lucide-react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
@@ -125,6 +126,8 @@ function Users({
   const [editing, setEditing] = useState<Account | null | undefined>(),
     [secret, setSecret] = useState<Secret | null>(null),
     [reset, setReset] = useState<Account | null>(null),
+    [removal, setRemoval] = useState<Account | null>(null),
+    [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [search, setSearch] = useState(""),
@@ -245,6 +248,15 @@ function Users({
                           Redefinir senha
                         </button>
                       )}
+                      {u.id !== current.id && (
+                        <button
+                          className="small secondary danger-text"
+                          aria-label={"Remover " + u.name}
+                          onClick={() => setRemoval(u)}
+                        >
+                          <Trash2 size={14} /> Remover
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -257,6 +269,28 @@ function Users({
             usuários ativos
           </p>
         </section>
+      )}
+      {notice && (
+        <p role="status" className="notice">
+          {notice}
+        </p>
+      )}
+      {removal && (
+        <RemoveRegistration
+          kind="users"
+          row={removal}
+          onClose={() => setRemoval(null)}
+          onRemoved={(outcome) => {
+            setRemoval(null);
+            setNotice(
+              outcome === "deactivated"
+                ? "Conta desativada. O histórico foi preservado."
+                : "Conta removida.",
+            );
+            data.refresh();
+            onChanged();
+          }}
+        />
       )}
       {editing !== undefined && (
         <UserForm
@@ -693,6 +727,69 @@ function UserForm({
     </Modal>
   );
 }
+function RemoveRegistration({
+  kind,
+  row,
+  onClose,
+  onRemoved,
+}: {
+  kind: Tab;
+  row: { id: string; name: string; email?: string };
+  onClose: () => void;
+  onRemoved: (outcome: "deleted" | "deactivated") => void;
+}) {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <Modal
+      title="Remover cadastro"
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+    >
+      <p>
+        <strong>{row.name}</strong>
+        {row.email && " · " + row.email}
+      </p>
+      <p>
+        {kind === "sectors"
+          ? "A exclusão é definitiva para setores sem equipamentos vinculados."
+          : "O cadastro será excluído se estiver sem vínculos. Se houver histórico, será desativado."}
+      </p>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      <div className="row-actions">
+        <button className="secondary" disabled={busy} onClick={onClose}>
+          Cancelar
+        </button>
+        <button
+          className="danger-button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            try {
+              const { outcome } = await api(
+                "/admin/" + kind + "/" + encodeURIComponent(row.id),
+                { method: "DELETE" },
+              );
+              onRemoved(outcome);
+            } catch (cause) {
+              setError((cause as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Removendo…" : "Confirmar remoção"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
 function Registrations({
   kind,
   onChanged,
@@ -708,7 +805,9 @@ function Registrations({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [search, setSearch] = useState(""),
-    [onlyActive, setOnlyActive] = useState(true);
+    [onlyActive, setOnlyActive] = useState(true),
+    [removal, setRemoval] = useState<Registration | null>(null),
+    [notice, setNotice] = useState("");
   const technician = kind === "technicians";
   function open(row: Registration | null) {
     setEdit(row);
@@ -813,9 +912,21 @@ function Registrations({
                     </>
                   )}
                   <td>
-                    <button className="small secondary" onClick={() => open(r)}>
-                      Editar
-                    </button>
+                    <div className="row-actions">
+                      <button
+                        className="small secondary"
+                        onClick={() => open(r)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="small secondary danger-text"
+                        aria-label={"Remover " + r.name}
+                        onClick={() => setRemoval(r)}
+                      >
+                        <Trash2 size={14} /> Remover
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -826,6 +937,28 @@ function Registrations({
             {rows.length} cadastros encontrados
           </p>
         </section>
+      )}
+      {notice && (
+        <p role="status" className="notice">
+          {notice}
+        </p>
+      )}
+      {removal && (
+        <RemoveRegistration
+          kind={kind}
+          row={removal}
+          onClose={() => setRemoval(null)}
+          onRemoved={(outcome) => {
+            setRemoval(null);
+            setNotice(
+              outcome === "deactivated"
+                ? "Técnico desativado. O histórico foi preservado."
+                : "Cadastro removido.",
+            );
+            data.refresh();
+            onChanged();
+          }}
+        />
       )}
       {edit !== undefined && (
         <Modal

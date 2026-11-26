@@ -11,6 +11,7 @@ type Source = {
   scope: string;
   target: string;
   isDemo: boolean;
+  active: boolean;
   mapping?: Record<string, string>;
   options?: any;
 };
@@ -199,6 +200,8 @@ function LegacyImportsPage({
     history = useResource<Page<any>>("/imports?page=" + page),
     [sourceId, setSourceId] = useState(""),
     [creating, setCreating] = useState(false),
+    [sourceAction, setSourceAction] = useState<"edit" | "remove" | null>(null),
+    [sourceNotice, setSourceNotice] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [sheet, setSheet] = useState(""),
     [header, setHeader] = useState(1),
@@ -397,10 +400,36 @@ function LegacyImportsPage({
             {sources.data?.map((s) => (
               <option value={s.id} key={s.id}>
                 {s.name} · {targetLabel[s.target]} · base {s.scope}
+                {!s.active && " · Inativa"}
               </option>
             ))}
           </select>
         </label>
+        {sourceNotice && <p role="status">{sourceNotice}</p>}
+        {source && (
+          <div className="row-actions">
+            <button
+              className="small secondary"
+              disabled={busy}
+              onClick={() => setSourceAction("edit")}
+            >
+              Editar origem
+            </button>
+            <button
+              className="small secondary danger-text"
+              disabled={busy}
+              onClick={() => setSourceAction("remove")}
+            >
+              Remover origem
+            </button>
+          </div>
+        )}
+        {source && !source.active && (
+          <p>
+            Origem inativa. Reative em Editar origem para importar novos
+            arquivos.
+          </p>
+        )}
         {source && (
           <>
             <p className="muted">
@@ -505,7 +534,10 @@ function LegacyImportsPage({
               UTF-8. Para testar os exemplos, escolha uma origem de dados
               fictícios.
             </p>
-            <button disabled={busy || !file} onClick={sendFile}>
+            <button
+              disabled={busy || !file || !source.active}
+              onClick={sendFile}
+            >
               {busy ? "Aguarde…" : "Ler arquivo"}
             </button>
           </>
@@ -1029,6 +1061,25 @@ function LegacyImportsPage({
           </>
         )}
       </section>
+      {source && sourceAction && (
+        <SourceMaintenance
+          source={source}
+          removal={sourceAction === "remove"}
+          onClose={() => setSourceAction(null)}
+          onSaved={(outcome) => {
+            setSourceAction(null);
+            setSourceNotice(
+              outcome === "deactivated"
+                ? "Origem desativada. O histórico foi preservado."
+                : outcome === "deleted"
+                  ? "Origem removida."
+                  : "Origem atualizada.",
+            );
+            if (outcome === "deleted") choose("");
+            sources.refresh();
+          }}
+        />
+      )}
       {creating && (
         <SourceForm
           onClose={() => setCreating(false)}
@@ -1153,6 +1204,104 @@ function LegacyImportsPage({
         </Modal>
       )}
     </>
+  );
+}
+function SourceMaintenance({
+  source,
+  removal,
+  onClose,
+  onSaved,
+}: {
+  source: Source;
+  removal: boolean;
+  onClose: () => void;
+  onSaved: (outcome?: "deleted" | "deactivated") => void;
+}) {
+  const [name, setName] = useState(source.name);
+  const [active, setActive] = useState(source.active);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <Modal
+      title={removal ? "Remover origem" : "Editar origem"}
+      onClose={onClose}
+    >
+      <form
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setBusy(true);
+          setError("");
+          try {
+            const result = await api(
+              "/imports/sources/" + encodeURIComponent(source.id),
+              removal
+                ? { method: "DELETE" }
+                : {
+                    method: "PATCH",
+                    body: JSON.stringify({ name, active }),
+                  },
+            );
+            onSaved(result.outcome);
+          } catch (cause) {
+            setError((cause as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {removal ? (
+          <>
+            <p>
+              <strong>{source.name}</strong>
+            </p>
+            <p>Origens com lotes ou registros vinculados serão desativadas.</p>
+          </>
+        ) : (
+          <>
+            <label>
+              Nome da origem
+              <input
+                required
+                minLength={3}
+                maxLength={120}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(event) => setActive(event.target.checked)}
+              />{" "}
+              Origem ativa
+            </label>
+            <p>Identificação da base · {source.scope}</p>
+          </>
+        )}
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        <div className="row-actions">
+          <button
+            type="button"
+            disabled={busy}
+            className="secondary"
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={busy}
+            className={removal ? "danger-button" : undefined}
+          >
+            {removal ? "Confirmar remoção" : "Salvar origem"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 function SourceForm({
