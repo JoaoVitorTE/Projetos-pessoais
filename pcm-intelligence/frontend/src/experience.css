@@ -2,9 +2,7 @@
 :root {
   --navy: #102b3f;
   --teal: #167f70;
-  --shadow: 0 10px 30px #14304708;
-  --radius: 16px;
-  --muted: #657487;
+  --radius: 18px;
   --on-primary: #fff;
 }
 button {
@@ -1929,7 +1927,6 @@ summary:focus-visible {
   margin-bottom: 28px;
 }
 [data-theme="dark"] {
-  --muted: #a3b0c1;
   --navy: #102b3f;
   --on-primary: #102b3f;
 }
@@ -2794,7 +2791,7 @@ summary:focus-visible {
   color: #fff;
 }
 .danger-text {
-  color: #b95549 !important;
+  color: var(--danger-ink) !important;
 }
 .pending-tag {
   font-size: 11px;

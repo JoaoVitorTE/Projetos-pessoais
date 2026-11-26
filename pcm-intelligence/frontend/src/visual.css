@@ -1,0 +1,324 @@
+/* Shared surfaces, contrast and motion across the operational and account screens. */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --motion-fast: 160ms;
+  --motion-enter: 320ms;
+  --workspace-glow: #9ac8f84d;
+  --workspace-wash: #a7e5d34d;
+  --header-surface: #f9fcffe8;
+  --danger-ink: #a83237;
+}
+
+:root[data-theme="dark"] {
+  --workspace-glow: #20588a46;
+  --workspace-wash: #12675030;
+  --header-surface: #102638ec;
+  --danger-ink: #ffacaa;
+}
+
+.workspace-shell {
+  background:
+    radial-gradient(
+      ellipse 65% 450px at 94% 0,
+      var(--workspace-glow),
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse 60% 380px at 0 15%,
+      var(--workspace-wash),
+      transparent 100%
+    ),
+    var(--bg);
+}
+
+.floating-header {
+  background: var(--header-surface);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.section-dropdown,
+.account-dropdown,
+.navigation-drawer,
+.modal {
+  box-shadow: var(--shadow-raised);
+}
+
+.workspace-content .page-title h1 {
+  font-size: clamp(1.8rem, 2.8vw, 2.45rem);
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.workspace-content .panel,
+.workspace-content .filters,
+.workspace-content .search-box {
+  border-radius: var(--radius);
+}
+
+.workspace-content .panel {
+  box-shadow: var(--shadow);
+}
+
+.home-intro {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 190px;
+  margin-top: 0;
+  padding: clamp(22px, 4vw, 48px);
+  border: 1px solid #367e93;
+  border-radius: var(--radius);
+  color: #f2faff;
+  background:
+    linear-gradient(100deg, #081f36 6%, #08273be6 44%, #08344480 100%),
+    url("/brand/maintenance-floor.webp") center 46% / cover,
+    #113b50;
+  box-shadow: var(--shadow-raised);
+}
+
+.home-intro h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.85rem);
+  line-height: 1.08;
+  letter-spacing: -0.048em;
+}
+
+.home-intro p,
+.home-refresh > span {
+  color: #daedf6;
+}
+
+.home-refresh {
+  position: relative;
+  padding: 12px;
+  background: #0b273de0;
+  border: 1px solid #73b6c16e;
+  border-radius: 12px;
+}
+
+.home-refresh .secondary {
+  background: #193e52;
+  color: #f1fbff;
+  border-color: #598393;
+}
+
+.home-intro .home-refresh > span {
+  font-size: 11px;
+}
+
+.home-metric {
+  background: linear-gradient(
+    150deg,
+    var(--surface-raised),
+    var(--surface) 70%
+  );
+  border-top: 2px solid var(--metric-accent, var(--chart-blue));
+}
+
+.home-metric.teal {
+  --metric-accent: var(--chart-green);
+}
+.home-metric.amber {
+  --metric-accent: #ca9448;
+}
+
+.home-metric > b {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 3vw, 2.65rem);
+}
+
+.blue .metric-icon,
+[data-theme="dark"] .blue .metric-icon {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.shortcut-card,
+.home-metric {
+  transition:
+    transform 200ms var(--ease-out),
+    border-color 200ms,
+    box-shadow 200ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shortcut-card:hover,
+  .home-metric:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+.shortcut-card:active,
+.home-metric:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.modern-login .login-story {
+  background:
+    linear-gradient(130deg, #091e34 10%, #0a2a3bed 48%, #092d37d4),
+    url("/brand/maintenance-floor.webp") center / cover,
+    #123b4d;
+}
+
+.modern-login .login-story h1 {
+  white-space: normal;
+}
+
+.modern-login .login-form {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 100% 0, var(--workspace-glow), transparent 70%),
+    var(--bg);
+}
+
+.modern-login .login-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
+  padding: clamp(20px, 4vw, 40px);
+}
+
+.login-theme {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+button,
+.button-link {
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+:is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.error,
+.danger-text {
+  color: var(--danger-ink);
+}
+
+.notice p {
+  color: var(--muted);
+}
+
+.compact-notice {
+  margin-bottom: 14px;
+}
+
+.workspace-content table tbody tr:hover {
+  background: var(--surface-raised);
+}
+
+.recharts-cartesian-axis-tick-value,
+.recharts-legend-item-text {
+  fill: var(--muted);
+}
+
+.recharts-default-tooltip {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+.recharts-tooltip-cursor {
+  fill: var(--blue-soft);
+  stroke: var(--accent-border);
+}
+
+@keyframes pcm-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pcm-drawer {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-content
+    > :is(.home-intro, .home-metrics, .home-columns, .home-shortcuts-section),
+  .module-content > :is(.panel, .filters, .action-row, .tabs),
+  .modern-login .login-box {
+    animation: pcm-enter var(--motion-enter) var(--ease-out) backwards;
+  }
+
+  .workspace-content > .home-metrics {
+    animation-delay: 40ms;
+  }
+
+  .section-dropdown,
+  .account-dropdown,
+  .modal {
+    animation: pcm-enter 200ms var(--ease-out);
+  }
+
+  .navigation-drawer[open] {
+    animation: pcm-drawer 260ms var(--ease-out);
+  }
+}
+
+@media (max-width: 650px) {
+  .home-intro {
+    min-height: 0;
+    align-items: stretch;
+    background-position:
+      center,
+      62% center,
+      center;
+  }
+
+  .home-intro .home-refresh {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+
+  .modern-login .login-form {
+    padding-top: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-metric:hover,
+  .home-metric:active,
+  .shortcut-card:hover,
+  .shortcut-card:active {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

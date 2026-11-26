@@ -135,7 +135,7 @@ export function OperationalShell({
                 </p>
               }
             >
-              <div key={route.key}>
+              <div key={route.key} className="module-content">
                 {tab === "dashboard" ? (
                   <Dashboard lookups={lookups.data} />
                 ) : tab === "equipment" ? (

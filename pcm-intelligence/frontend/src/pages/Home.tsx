@@ -150,11 +150,8 @@ export function HomePage({
     <>
       <div className="home-intro">
         <div>
-          <span className="section-kicker">SEU PANORAMA DE HOJE</span>
-          <h2>Planeje o próximo passo.</h2>
-          <p>
-            Veja o que precisa de atenção e acesse sua rotina pelos atalhos.
-          </p>
+          <h2>Panorama da manutenção</h2>
+          <p>Acompanhe pendências, programação e próximos vencimentos.</p>
         </div>
         <div className="home-refresh">
           <span>
@@ -207,7 +204,7 @@ export function HomePage({
                 detail: data.counts.overduePlans + " planos vencidos",
                 icon: CalendarDays,
                 module: "plans" as ModuleId,
-                tone: "violet",
+                tone: "blue",
               },
             ].map((k) => (
               <button
