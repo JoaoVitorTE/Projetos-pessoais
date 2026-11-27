@@ -18,6 +18,7 @@ export type ModuleId =
 export type NavigationOptions = {
   recordId?: string;
   overdue?: boolean;
+  createOrder?: boolean;
   q?: string;
   adminTab?: "users" | "technicians" | "sectors";
 };

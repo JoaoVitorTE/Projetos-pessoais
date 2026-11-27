@@ -117,30 +117,34 @@ export function FleetFilters({
   value,
   onChange,
   lookups,
+  showSector = true,
 }: {
+  showSector?: boolean;
   value: FleetFilter;
   onChange: (v: FleetFilter) => void;
   lookups: Lookups;
 }) {
   return (
     <>
-      <label>
-        Setor
-        <select
-          aria-label="Setor"
-          value={value.sectorId}
-          onChange={(e) =>
-            onChange({ ...value, sectorId: e.target.value, equipmentId: "" })
-          }
-        >
-          <option value="">Todos os setores</option>
-          {lookups.sectors.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {showSector && (
+        <label>
+          Setor
+          <select
+            aria-label="Setor"
+            value={value.sectorId}
+            onChange={(e) =>
+              onChange({ ...value, sectorId: e.target.value, equipmentId: "" })
+            }
+          >
+            <option value="">Todos os setores</option>
+            {lookups.sectors.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         Equipamento
         <select

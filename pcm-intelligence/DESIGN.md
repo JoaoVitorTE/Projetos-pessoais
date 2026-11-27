@@ -32,3 +32,5 @@ A referência visual é o quadro de turno de uma oficina industrial. A página i
 Barlow Semi Condensed distingue títulos e números. Campos, descrições e tabelas usam a família de leitura do app. O azul indica navegação e foco, o verde indica ação e disponibilidade. Âmbar e vermelho são reservados para avisos e situações críticas.
 
 A fonte de verdade dos tokens é o CSS do frontend. `styles.css` define `--blue`, `--green`, `--heading-font`, `--warning-ink` e `--critical-ink`, com cores por tema. `experience.css` define `--radius` e os componentes compartilhados. `visual.css` define as superfícies da navegação e do painel fotográfico, aplica o layout e as transições nos temas. As regras de movimento respeitam a preferência do sistema.
+
+A barra lateral do desktop usa ícones para liberar espaço às tabelas. Os menus exibem o nome da seção e os módulos. Em Ordens de serviço, as ações de entrada ficam no topo, seguidas da seleção por setor e dos filtros de consulta.

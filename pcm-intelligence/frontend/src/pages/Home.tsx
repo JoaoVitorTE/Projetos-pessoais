@@ -16,7 +16,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { State } from "../components/OperationalUI";
-import { equipmentCode, type Lookups, type User } from "../types/operations";
+import {
+  canPlan,
+  equipmentCode,
+  type Lookups,
+  type User,
+} from "../types/operations";
 import type { Navigate, ModuleId } from "../types/navigation";
 import { allowedEntries } from "../components/Navigation";
 import { dateTime, clock, ZONE } from "../components/scheduling/dates";
@@ -158,15 +163,35 @@ export function HomePage({
         <section className="home-intro" aria-labelledby="home-overview-title">
           <div>
             <h2 id="home-overview-title">Visão da operação</h2>
-            <p>Ordens de serviço, programação da equipe e manutenção preventiva.</p>
+            <p>
+              Ordens de serviço, programação da equipe e manutenção preventiva.
+            </p>
             <div className="row-actions">
               <button
                 className="home-primary"
-                onClick={() => onNavigate("orders")}
+                onClick={() =>
+                  onNavigate(
+                    "orders",
+                    canPlan(user) ? { createOrder: true } : undefined,
+                  )
+                }
               >
-                <ClipboardList size={17} /> Ordens de serviço{" "}
+                {canPlan(user) ? (
+                  <Plus size={17} />
+                ) : (
+                  <ClipboardList size={17} />
+                )}
+                {canPlan(user) ? "Nova ordem" : "Ordens de serviço"}
                 <ArrowRight size={15} />
               </button>
+              {canPlan(user) && (
+                <button
+                  className="home-orders-link"
+                  onClick={() => onNavigate("orders")}
+                >
+                  Ver ordens
+                </button>
+              )}
             </div>
           </div>
           <div className="home-refresh">
@@ -188,7 +213,10 @@ export function HomePage({
           </div>
         </section>
         {data && (
-          <section className="panel home-today" aria-labelledby="home-agenda-title">
+          <section
+            className="panel home-today"
+            aria-labelledby="home-agenda-title"
+          >
             <div className="block-heading">
               <div>
                 <h2 id="home-agenda-title">

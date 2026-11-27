@@ -159,6 +159,8 @@ export function OperationalShell({
                 ) : tab === "orders" ? (
                   <OrdersPage
                     user={user}
+                    initialCreate={route.options.createOrder}
+                    onNavigate={navigate}
                     lookups={lookups.data}
                     search={q}
                     initialRecordId={route.options.recordId}
