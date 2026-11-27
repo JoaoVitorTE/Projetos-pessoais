@@ -11,6 +11,7 @@ import {
   workbookPreview,
   mappingSchema,
   type Mapping,
+  type SapFeed,
   type Tab,
   type WorkbookRow,
 } from "./workbook.js";
@@ -21,6 +22,7 @@ type Context = {
   actorId?: string;
   revision?: Date;
   fileId?: string;
+  feed?: SapFeed;
 };
 type SheetResult = {
   tab: Tab;
@@ -73,7 +75,7 @@ export async function importWorkbook(
         status: "rejected",
         error: "Configuração pendente. Salve o mapeamento manualmente.",
       });
-    const sheets = await workbookPreview(buffer, mapping);
+    const sheets = await workbookPreview(buffer, mapping, context.feed);
     const results: SheetResult[] = sheets.map(({ tab, issues, rows }) => ({
       tab,
       issues,
@@ -189,10 +191,12 @@ export async function importWorkbook(
         }
 
         function keys(tab: Tab, column: string) {
-          const sheet = sheets.find((item) => item.tab === tab)!;
+          const sheet = sheets.find((item) => item.tab === tab);
           return [
             ...new Set(
-              sheet.rows.map((row) => row.values[column]).filter(Boolean),
+              (sheet?.rows ?? [])
+                .map((row) => row.values[column])
+                .filter(Boolean),
             ),
           ];
         }
@@ -477,8 +481,27 @@ export async function importWorkbook(
                     baseDate,
                     entryDate,
                     workCenter: text(v.workCenter),
-                    orderType: text(v.orderType),
-                    fields,
+                    orderType:
+                      text(v.orderType)?.toUpperCase() ??
+                      before?.orderType ??
+                      null,
+                    fields: {
+                      ...fields,
+                      ...(v.description ? { description: v.description } : {}),
+                      ...Object.fromEntries(
+                        ["planNumber", "planTitle", "planItem"].flatMap(
+                          (key) => {
+                            const previous = before?.fields as
+                              | Record<string, unknown>
+                              | undefined;
+                            const value = v[key] || previous?.[key];
+                            return typeof value === "string" && value
+                              ? [[key, value.slice(0, 250)]]
+                              : [];
+                          },
+                        ),
+                      ),
+                    },
                   };
                   if (
                     !before ||

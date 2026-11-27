@@ -1,3 +1,4 @@
+import { SapDailyStatus } from "../components/SapRoutine";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -172,7 +173,7 @@ export function HomePage({
                 onClick={() =>
                   onNavigate(
                     "orders",
-                    canPlan(user) ? { createOrder: true } : undefined,
+                    canPlan(user) ? { createReminder: true } : undefined,
                   )
                 }
               >
@@ -271,6 +272,7 @@ export function HomePage({
           </section>
         )}
       </div>
+      {canPlan(user) && <SapDailyStatus onNavigate={onNavigate} />}
       <State error={error} loading={loading} />
       {data && (
         <>

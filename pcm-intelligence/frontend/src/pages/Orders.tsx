@@ -52,6 +52,7 @@ export function OrdersPage({
   const [fleet, setFleet] = useState(emptyFleet),
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
+    [type, setType] = useState(""),
     [overdue, setOverdue] = useState(initialOverdue),
     [edit, setEdit] = useState<Order | undefined>(),
     [detail, setDetail] = useState(initialRecordId),
@@ -61,6 +62,7 @@ export function OrdersPage({
     ...fleet,
     page,
     status,
+    type,
     overdue: overdue ? "true" : "",
     q: search,
   });
@@ -117,6 +119,28 @@ export function OrdersPage({
           }}
           lookups={lookups}
         />
+        <label>
+          Tipo de ordem
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">Todos os tipos</option>
+            <option value="CORRECTIVE">CORR · Corretiva</option>
+            <option value="CORRECTIVE_PLANNED">
+              CORP · Corretiva programada
+            </option>
+            <option value="IMPROVEMENT">MELH · Melhoria</option>
+            <option value="CORRECTIVE_INDUSTRIAL">
+              CORI · Corretiva industrial
+            </option>
+            <option value="PREVENTIVE">Preventiva</option>
+            <option value="LUBRICATION">Lubrificação</option>
+          </select>
+        </label>
         <label>
           Status
           <select
@@ -290,39 +314,30 @@ function OrderForm({
   onSaved: () => void;
 }) {
   const [form, setForm] = useState({
-      equipmentId: initial?.equipmentId || "",
-      technicianId: initial?.technicianId || "",
-      type: initial?.type || "CORRECTIVE",
-      description: initial?.description || "",
-      priority: initial?.priority || 2,
-      scheduledAt: initial
-        ? initial.scheduledAt
-          ? localDate(initial.scheduledAt)
-          : ""
-        : localDate(),
-      notes: initial?.notes || "",
-      sapReference: initial?.sapReference || "",
-      status: initial?.status || "OPEN",
+      equipmentId: initial.equipmentId,
+      technicianId: initial.technicianId || "",
+      type: initial.type,
+      description: initial.description,
+      priority: initial.priority,
+      scheduledAt: initial.scheduledAt ? localDate(initial.scheduledAt) : "",
+      notes: initial.notes || "",
+      sapReference: initial.sapReference || "",
+      status: initial.status,
       changeNote: "",
     }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const tech = user.role === "TECHNICIAN";
-  const options = initial
-    ? [
-        initial.status,
-        ...(orderTransitions[initial.status] || []).filter(
-          (s) =>
-            !tech ||
-            [
-              "IN_PROGRESS",
-              "WAITING_PART",
-              "WAITING_VENDOR",
-              "COMPLETED",
-            ].includes(s),
+  const options = [
+    initial.status,
+    ...(orderTransitions[initial.status] || []).filter(
+      (s) =>
+        !tech ||
+        ["IN_PROGRESS", "WAITING_PART", "WAITING_VENDOR", "COMPLETED"].includes(
+          s,
         ),
-      ]
-    : ["OPEN"];
+    ),
+  ];
   return (
     <Modal title={"Editar ordem " + initial.id} onClose={onClose}>
       <form
@@ -344,21 +359,19 @@ function OrderForm({
               notes: form.notes || null,
               sapReference: form.sapReference || null,
             };
-            const body = initial
-              ? tech
-                ? {
-                    version: initial.version,
-                    status: form.status,
-                    notes: data.notes,
-                    changeNote: form.changeNote,
-                  }
-                : {
-                    ...data,
-                    version: initial.version,
-                    status: form.status,
-                    changeNote: form.changeNote,
-                  }
-              : data;
+            const body = tech
+              ? {
+                  version: initial.version,
+                  status: form.status,
+                  notes: data.notes,
+                  changeNote: form.changeNote,
+                }
+              : {
+                  ...data,
+                  version: initial.version,
+                  status: form.status,
+                  changeNote: form.changeNote,
+                };
             await api("/orders/" + initial.id, {
               method: "PATCH",
               body: JSON.stringify(body),
@@ -453,22 +466,20 @@ function OrderForm({
             </label>
           </>
         )}
-        {initial && (
-          <label>
-            Status
-            <select
-              aria-label="Status"
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              {options.map((s) => (
-                <option key={s} value={s}>
-                  {statusLabel[s]}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+        <label>
+          Status
+          <select
+            aria-label="Status"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+          >
+            {options.map((s) => (
+              <option key={s} value={s}>
+                {statusLabel[s]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="span-2">
           Observações
           <textarea
@@ -478,19 +489,17 @@ function OrderForm({
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
         </label>
-        {initial && (
-          <label className="span-2">
-            Motivo da alteração
-            <input
-              aria-label="Motivo da alteração"
-              required
-              minLength={3}
-              maxLength={1000}
-              value={form.changeNote}
-              onChange={(e) => setForm({ ...form, changeNote: e.target.value })}
-            />
-          </label>
-        )}
+        <label className="span-2">
+          Motivo da alteração
+          <input
+            aria-label="Motivo da alteração"
+            required
+            minLength={3}
+            maxLength={1000}
+            value={form.changeNote}
+            onChange={(e) => setForm({ ...form, changeNote: e.target.value })}
+          />
+        </label>
         <div className="form-bottom">
           {error && (
             <p className="error" role="alert">
