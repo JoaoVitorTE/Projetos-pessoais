@@ -50,3 +50,20 @@ A conta do fluxo precisa de permissão de **leitura** no arquivo e na biblioteca
 Testes locais com PostgreSQL verificam cadastro, auditoria, arquivamento e exclusão, cabeçalhos e prévia, notas e confirmações que chegam antes da ordem, reenvio, horas por matrícula, preservação dos dados do PCM, Excel/PDF e o receptor HTTP com revisões simultâneas e fora de ordem.
 
 A entrega real de um salvamento pelo Microsoft 365 depende da conta corporativa, das permissões do SharePoint e da configuração do fluxo. A etapa 4 da conexão verifica esse percurso no ambiente da empresa.
+
+## Rotina diária com arquivos separados
+
+No Início, o PCM mostra a situação do dia de cada exportação no horário de São Paulo. Abra **Importar hoje** para selecionar a transação correspondente.
+
+- **IW38 · Ordens de manutenção.** Inclua número da ordem, equipamento, tipo, data de entrada ou data-base e descritivo. Use os códigos CORR, CORP, MELH e CORI. Para identificar preventivas e lubrificação, inclua a coluna **Plano de manutenção**. Quando estiverem disponíveis, inclua **Descrição do plano** e **Item de manutenção**.
+- **IW47 · Apontamentos da equipe.** Inclua ordem, matrícula, datas, horas e, quando disponível, número e contador de confirmação. Use os apontamentos para acompanhar trabalho realizado.
+
+O PCM aceita um Excel de cada transação com uma única aba de dados ou uma aba chamada IW38, IW47, Ordens ou Apontamentos, conforme a transação. A planilha consolidada e sua conexão continuam disponíveis. Confira a prévia e importe cada arquivo. A rotina assinala importações parciais para revisão e só confirma uma transação após processar linhas dessa origem.
+
+## Planejamento e análise de interrupções
+
+Em Ordens de serviço, registre o planejamento com tipo, data e texto para a futura ordem. Abra a ordem oficial no SAP, importe a IW38 e informe o número para vincular os registros. O vínculo exige que a ordem importada pertença ao equipamento do planejamento.
+
+Em Interrupções, o PCM mostra equipamentos com pelo menos duas ordens CORR ou CORI nos últimos 30 dias. O descritivo e os números das ordens ajudam a investigar. Revise a sugestão e escolha a data para salvar o planejamento. A duração real de uma parada pode ser importada em lote em **Importar paradas em lote**. Aponte exceções manualmente quando necessário.
+
+A aba **Preventivas e lubrificação** mostra referências de planos agrupadas pelo número identificado na IW38. Quando a exportação não traz a lista de tarefas, o PCM mantém a referência e as ordens associadas. Periodicidade, próximo vencimento e tarefas só podem ser cadastrados com os dados do plano.

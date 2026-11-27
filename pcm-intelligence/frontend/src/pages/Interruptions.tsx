@@ -1,3 +1,5 @@
+import { SapRecurrences } from "../components/SapRoutine";
+import type { Navigate } from "../types/navigation";
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
@@ -39,10 +41,12 @@ export function InterruptionsPage({
   user,
   lookups,
   search,
+  onNavigate,
 }: {
   user: User;
   lookups: Lookups;
   search: string;
+  onNavigate: Navigate;
 }) {
   const [fleet, setFleet] = useState(emptyFleet),
     [page, setPage] = useState(1),
@@ -58,14 +62,27 @@ export function InterruptionsPage({
   );
   return (
     <>
+      {canPlan(user) && <SapRecurrences lookups={lookups} />}
       <div className="action-row">
         <p>
-          Interrupções registradas manualmente. Duração calculada pelo início e
-          término.
+          Registre horários reais de parada por planilha ou aponte uma exceção
+          manualmente.
         </p>
-        {(canPlan(user) || user.role === "TECHNICIAN") && (
-          <button onClick={() => setEdit(null)}>Registrar interrupção</button>
-        )}
+        <div className="row-actions">
+          {canPlan(user) && (
+            <button
+              className="secondary"
+              onClick={() =>
+                onNavigate("imports", { interruptionImport: true })
+              }
+            >
+              Importar paradas em lote
+            </button>
+          )}
+          {(canPlan(user) || user.role === "TECHNICIAN") && (
+            <button onClick={() => setEdit(null)}>Registrar exceção</button>
+          )}
+        </div>
       </div>
       <div className="filters">
         <FleetFilters

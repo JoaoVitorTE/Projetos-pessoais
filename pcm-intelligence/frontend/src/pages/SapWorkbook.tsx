@@ -67,7 +67,14 @@ const json = (method: string, value: unknown) => ({
 const selections = (sheets: SheetPreview[]) =>
   Object.fromEntries(sheets.map((sheet) => [sheet.tab, sheet.mapping]));
 
-export function SapWorkbook({ onChanged }: { onChanged: () => void }) {
+export function SapWorkbook({
+  onChanged,
+  initialFeed,
+}: {
+  onChanged: () => void;
+  initialFeed?: "IW38" | "IW47";
+}) {
+  const [feed, setFeed] = useState<"" | "IW38" | "IW47">(initialFeed ?? "");
   const status = useResource<Status>("/sap/status");
   const [file, setFile] = useState<File | null>(null);
   const [draft, setDraft] = useState<Mapping>({});
@@ -96,6 +103,7 @@ export function SapWorkbook({ onChanged }: { onChanged: () => void }) {
       filename: file.name,
       content: await readExcel(file),
       mapping: draft,
+      ...(feed ? { feed } : {}),
     };
   }
   const valid =
@@ -144,6 +152,23 @@ export function SapWorkbook({ onChanged }: { onChanged: () => void }) {
             });
           }}
         >
+          <label>
+            Tipo de exportação SAP
+            <select
+              disabled={busy}
+              value={feed}
+              onChange={(event) => {
+                setFeed(event.target.value as typeof feed);
+                setPreview([]);
+                setVerified(false);
+                setDraft(status.data?.mapping ?? {});
+              }}
+            >
+              <option value="">Planilha consolidada PCM-SAP</option>
+              <option value="IW38">IW38 · Ordens de manutenção</option>
+              <option value="IW47">IW47 · Apontamentos da equipe</option>
+            </select>
+          </label>
           <label>
             Arquivo Excel
             <input

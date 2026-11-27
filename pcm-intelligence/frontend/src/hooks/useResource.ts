@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { api } from "../services/api";
 export function useResource<T>(path: string) {
   const previousPath = useRef(path);
@@ -22,5 +22,6 @@ export function useResource<T>(path: string) {
       });
     return () => controller.abort();
   }, [path, revision]);
-  return { data, error, loading, refresh: () => setRevision((n) => n + 1) };
+  const refresh = useCallback(() => setRevision((n) => n + 1), []);
+  return { data, error, loading, refresh };
 }

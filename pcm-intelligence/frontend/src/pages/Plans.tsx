@@ -1,3 +1,4 @@
+import { SapPlanReferences } from "../components/SapRoutine";
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
@@ -97,6 +98,7 @@ export function PlansPage({
           )}
         </div>
       </div>
+      {canPlan(user) && <SapPlanReferences />}
       <div className="filters">
         <FleetFilters
           value={fleet}

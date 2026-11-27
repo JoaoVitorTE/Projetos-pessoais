@@ -18,7 +18,9 @@ export type ModuleId =
 export type NavigationOptions = {
   recordId?: string;
   overdue?: boolean;
-  createOrder?: boolean;
+  createReminder?: boolean;
+  sapFeed?: "IW38" | "IW47";
+  interruptionImport?: boolean;
   q?: string;
   adminTab?: "users" | "technicians" | "sectors";
 };
