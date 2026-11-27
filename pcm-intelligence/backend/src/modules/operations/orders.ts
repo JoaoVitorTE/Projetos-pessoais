@@ -199,6 +199,8 @@ export function ordersRouter(db: PrismaClient) {
     "/orders",
     run(async (req, res) => {
       requireRole(res, planners);
+      if (process.env.DATA_MODE !== "demo")
+        throw new HttpError(405, "Crie a ordem no SAP ou registre um planejamento no PCM.");
       const data = create.parse(req.body),
         user = actor(res);
       const row = await db.$transaction(async (tx) => {
