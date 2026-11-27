@@ -58,6 +58,16 @@ async function adminLock(tx: Prisma.TransactionClient, userId: string) {
       "Sua permissão administrativa mudou. Entre novamente.",
     );
 }
+function requireManageableAccount(
+  userId: string,
+  target: { id: string; role: { name: string } },
+) {
+  if (target.id !== userId && target.role.name === "ADMIN")
+    throw new HttpError(
+      403,
+      "Você não pode alterar a conta de outro administrador.",
+    );
+}
 export function administrationRouter(db: PrismaClient) {
   const r = Router();
   r.get(
@@ -161,19 +171,12 @@ export function administrationRouter(db: PrismaClient) {
             include: { role: true },
           }),
         );
+        requireManageableAccount(user.id, before);
         if (before.id === user.id && (!body.active || body.role !== "ADMIN"))
           throw new HttpError(
             409,
             "Não é permitido remover seu próprio acesso administrativo",
           );
-        if (
-          before.role.name === "ADMIN" &&
-          (!body.active || body.role !== "ADMIN") &&
-          (await tx.user.count({
-            where: { active: true, role: { name: "ADMIN" } },
-          })) <= 1
-        )
-          throw new HttpError(409, "Mantenha ao menos um administrador ativo");
         if (body.role === "TECHNICIAN" && !body.technicianId)
           throw new HttpError(400, "Vincule um técnico à conta");
         if (
@@ -224,8 +227,12 @@ export function administrationRouter(db: PrismaClient) {
       await db.$transaction(async (tx) => {
         await adminLock(tx, user.id);
         const target = must(
-          await tx.user.findUnique({ where: { id: req.params.id } }),
+          await tx.user.findUnique({
+            where: { id: req.params.id },
+            include: { role: true },
+          }),
         );
+        requireManageableAccount(user.id, target);
         await tx.user.update({
           where: { id: target.id },
           data: { passwordHash, mustChangePassword: true },
@@ -395,6 +402,7 @@ export function administrationRouter(db: PrismaClient) {
             },
           }),
         );
+        requireManageableAccount(user.id, before);
         const settings = await tx.sapWorkbookSettings.findFirst({
           where: { actorId: id },
           select: { id: true },

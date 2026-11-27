@@ -1344,3 +1344,42 @@ button,
     text-align: left;
   }
 }
+
+.legal-links {
+  margin-block: 16px;
+  padding-block: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.legal-links nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.legal-links p {
+  margin: 0 0 8px;
+}
+
+.legal-links a,
+.login-terms a {
+  color: var(--blue);
+}
+
+.modern-login .login-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  line-height: 1.45;
+}
+
+.modern-login .login-terms input {
+  width: 17px;
+  min-height: 17px;
+  padding: 0;
+  margin: 1px 0 0;
+  flex: none;
+  accent-color: var(--green);
+}

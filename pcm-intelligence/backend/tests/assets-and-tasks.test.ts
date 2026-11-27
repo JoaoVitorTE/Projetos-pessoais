@@ -1,3 +1,4 @@
+import { readImportJson } from "../src/modules/imports/protected-json.js";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
 import request from "supertest";
 import { PrismaClient } from "@prisma/client";
@@ -581,7 +582,9 @@ describe("Planos mistos e operações agrupadas com importação repetível", ()
     expect(Buffer.byteLength(JSON.stringify(batch.payload))).toBeLessThan(
       800000,
     );
-    expect((batch.payload as any).rows[0].data.tasks).toHaveLength(150);
+    expect(
+      (readImportJson(batch.payload, "payload") as any).rows[0].data.tasks,
+    ).toHaveLength(150);
   });
 });
 describe("Importação de equipamentos com TAG e número separados", () => {

@@ -15,7 +15,7 @@ import {
 import { importsRouter } from "./modules/imports/router.js";
 import { administrationRouter } from "./modules/administration/router.js";
 import { intelligenceRouter } from "./modules/intelligence/router.js";
-import { allowLogin } from "./services/login-throttle.js";
+import { allowLogin, clearLoginAttempts } from "./services/login-throttle.js";
 import { randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
 import pino from "pino";
@@ -25,6 +25,13 @@ const digest = (value: string) =>
 export function createApp(db: PrismaClient) {
   const app = express();
   app.disable("x-powered-by");
+  app.set("json escape", true);
+  const sessionCookie = {
+    httpOnly: true,
+    sameSite: "strict" as const,
+    secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
+    path: "/api",
+  };
   const origins = new Set(
     [
       process.env.FRONTEND_ORIGIN,
@@ -150,10 +157,20 @@ export function createApp(db: PrismaClient) {
         .object({
           email: z.string().trim().email().max(200),
           password: z.string().min(1).max(128),
+          termsVersion: z.literal("2026-11-27").optional(),
         })
+        .strict()
         .parse(req.body);
       const email = body.email.toLowerCase();
-      if (!(await allowLogin(db, email))) {
+      const forwarded =
+        process.env.VERCEL === "1"
+          ? req.get("x-vercel-forwarded-for")
+          : undefined;
+      const clientIp = forwarded?.split(",")[0]?.trim();
+      if (
+        (clientIp && !(await allowLogin(db, "ip:" + clientIp, 120))) ||
+        !(await allowLogin(db, email))
+      ) {
         return res.status(429).set("Retry-After", "900").json({
           error: "Muitas tentativas. Aguarde 15 minutos para tentar novamente.",
         });
@@ -175,6 +192,7 @@ export function createApp(db: PrismaClient) {
       }
       const token = randomBytes(32).toString("hex");
       await db.$transaction([
+        clearLoginAttempts(db, email),
         db.session.create({
           data: {
             id: digest(token),
@@ -187,16 +205,15 @@ export function createApp(db: PrismaClient) {
             userId: user.id,
             action: "LOGIN",
             entity: "Session",
-            metadata: {},
+            metadata: body.termsVersion
+              ? { termsVersion: body.termsVersion }
+              : {},
           },
         }),
       ]);
       res.cookie("pcm_session", token, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
+        ...sessionCookie,
         maxAge: 8 * 3600000,
-        path: "/api",
       });
       res.json(publicUser(user));
     } catch (e) {
@@ -221,7 +238,7 @@ export function createApp(db: PrismaClient) {
           },
         }),
       ]);
-      res.clearCookie("pcm_session", { path: "/api" });
+      res.clearCookie("pcm_session", sessionCookie);
       res.sendStatus(204);
     } catch (e) {
       next(e);
@@ -272,7 +289,7 @@ export function createApp(db: PrismaClient) {
         return res
           .status(409)
           .json({ error: "A senha já foi alterada. Entre novamente." });
-      res.clearCookie("pcm_session", { path: "/api" });
+      res.clearCookie("pcm_session", sessionCookie);
       res.sendStatus(204);
     } catch (e) {
       next(e);
@@ -380,7 +397,10 @@ export function createApp(db: PrismaClient) {
           .json({ error: "Arquivo ou requisição excedeu o limite permitido" });
       if ((error as { type?: string })?.type === "entity.parse.failed")
         return res.status(400).json({ error: "JSON inválido" });
-      logger.error({ err: error }, "Falha na requisição");
+      logger.error(
+        { code, type: error instanceof Error ? error.name : typeof error },
+        "Falha na requisição",
+      );
       res
         .status(500)
         .json({ error: "Erro interno. Consulte os logs do servidor." });
