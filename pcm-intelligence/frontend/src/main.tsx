@@ -54,15 +54,12 @@ function App() {
       <main className="login modern-login">
         <section className="login-story">
           <Brand light />
-          <span className="eyebrow">INTELIGÊNCIA PARA A OPERAÇÃO</span>
           <h1>
-            Clareza para planejar.
-            <br />
-            Controle para executar.
+            Planejamento e controle da manutenção
           </h1>
           <p>
-            Sua rotina de manutenção organizada em um só lugar, do planejamento
-            ao histórico de cada execução.
+            Programe a equipe, acompanhe ordens de serviço e consulte o histórico
+            de execução.
           </p>
           <div className="login-features">
             {[
@@ -93,7 +90,6 @@ function App() {
               </div>
             ))}
           </div>
-          <small>Planejamento e controle de manutenção industrial</small>
         </section>
         <section className="login-form">
           <button
@@ -108,8 +104,7 @@ function App() {
             <span className="login-key">
               <KeyRound size={21} />
             </span>
-            <span className="section-kicker">SEU AMBIENTE DE MANUTENÇÃO</span>
-            <h2>Bem-vindo de volta.</h2>
+            <h2>Acesse sua conta</h2>
             <p>Entre com a conta fornecida pelo administrador.</p>
             {info && (
               <p role="status" className="success">
