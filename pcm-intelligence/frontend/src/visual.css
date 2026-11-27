@@ -1174,3 +1174,173 @@ button,
     flex-wrap: wrap;
   }
 }
+
+.section-dropdown-heading {
+  margin: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.home-orders-link {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid #8ab2bf;
+  border-radius: 9px;
+  background: #0c2835;
+  color: var(--hero-ink);
+}
+
+.home-orders-link:hover {
+  background: #214959;
+}
+
+.orders-intake,
+.orders-sectors {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.orders-intake {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: clamp(16px, 2vw, 24px);
+  border-inline-start: 3px solid var(--green);
+}
+
+.orders-intake-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--soft);
+  color: var(--green);
+}
+
+.orders-intake h2 {
+  margin: 0;
+  font: 700 1.6rem / 1.1 var(--heading-font);
+}
+
+.orders-intake p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+}
+
+.orders-intake .row-actions {
+  margin-inline-start: auto;
+}
+
+.orders-sectors {
+  margin-block: 16px;
+  padding: 16px;
+}
+
+.orders-sectors h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.orders-sectors h2 svg {
+  color: var(--blue);
+}
+
+.orders-sector-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.orders-sector-options button {
+  min-height: 44px;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--ink);
+}
+
+.orders-sector-options button:hover,
+.orders-sector-options button[aria-pressed="true"] {
+  border-color: var(--accent-border);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.orders-sector-options button[aria-pressed="true"] {
+  box-shadow: inset 0 -3px var(--blue);
+}
+
+@media (min-width: 1100px) {
+  .workspace-shell {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .workspace-shell > .floating-header {
+    align-items: center;
+    padding-inline: 9px;
+  }
+
+  .floating-header .header-leading {
+    justify-content: center;
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .floating-header .brand-wordmark,
+  .floating-header .section-trigger > span,
+  .floating-header .nav-chevron,
+  .floating-header .account-name,
+  .floating-header .account-trigger > svg,
+  .floating-header .workspace-mode {
+    display: none;
+  }
+
+  .floating-header .section-trigger,
+  .floating-header .account-trigger {
+    justify-content: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .floating-header .section-trigger > svg:first-child {
+    width: 21px;
+    height: 21px;
+  }
+
+  .floating-header .header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .floating-header .account-menu {
+    width: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .orders-intake .row-actions {
+    justify-content: flex-start;
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .orders-intake .row-actions button {
+    min-height: 44px;
+  }
+
+  .orders-sector-options button {
+    text-align: left;
+  }
+}

@@ -25,6 +25,8 @@ function read() {
   const options: NavigationOptions = {};
   if (params.get("record"))
     options.recordId = params.get("record")!.slice(0, 120);
+  if (name === "orders" && params.get("nova") === "true")
+    options.createOrder = true;
   if (params.get("overdue") === "true") options.overdue = true;
   if (params.get("q")) options.q = params.get("q")!.slice(0, 120);
   const adminTab = params.get("tab");
@@ -48,6 +50,7 @@ export function useNavigation() {
   function navigate(id: ModuleId, options: NavigationOptions = {}) {
     const params = new URLSearchParams();
     if (options.recordId) params.set("record", options.recordId);
+    if (id === "orders" && options.createOrder) params.set("nova", "true");
     if (options.overdue) params.set("overdue", "true");
     if (options.q) params.set("q", options.q);
     if (options.adminTab) params.set("tab", options.adminTab);

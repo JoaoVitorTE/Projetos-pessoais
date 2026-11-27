@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { ClipboardPlus, Download, FileInput, Layers } from "lucide-react";
+import type { Navigate } from "../types/navigation";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
 import {
@@ -34,19 +36,25 @@ export function OrdersPage({
   lookups,
   search,
   initialRecordId = "",
+  initialCreate = false,
+  onNavigate,
   initialOverdue = false,
 }: {
   user: User;
   lookups: Lookups;
   search: string;
   initialRecordId?: string;
+  initialCreate?: boolean;
+  onNavigate: Navigate;
   initialOverdue?: boolean;
 }) {
   const [fleet, setFleet] = useState(emptyFleet),
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
     [overdue, setOverdue] = useState(initialOverdue),
-    [edit, setEdit] = useState<Order | null | undefined>(),
+    [edit, setEdit] = useState<Order | null | undefined>(
+      initialCreate && canPlan(user) ? null : undefined,
+    ),
     [detail, setDetail] = useState(initialRecordId),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
@@ -79,20 +87,68 @@ export function OrdersPage({
   }
   return (
     <>
-      <div className="action-row">
-        <p>Registros locais e cópias de exportações. Sem alterações no SAP.</p>
+      <section
+        className="orders-intake"
+        aria-labelledby="orders-intake-heading"
+      >
+        <span className="orders-intake-icon" aria-hidden="true">
+          <ClipboardPlus size={24} />
+        </span>
         <div>
-          <button className="secondary" onClick={download}>
-            Exportar CSV
-          </button>
+          <h2 id="orders-intake-heading">Entrada de ordens</h2>
+          <p>
+            Registros locais e cópias de exportações. Sem alterações no SAP.
+          </p>
+        </div>
+        <div className="row-actions">
           {canPlan(user) && (
-            <button onClick={() => setEdit(null)}>Criar ordem</button>
+            <button onClick={() => setEdit(null)}>
+              <ClipboardPlus size={16} /> Nova ordem
+            </button>
+          )}
+          {canPlan(user) && (
+            <button className="secondary" onClick={() => onNavigate("imports")}>
+              <FileInput size={16} /> Importar planilha
+            </button>
+          )}
+          <button className="secondary" onClick={download}>
+            <Download size={16} /> Exportar CSV
+          </button>
+        </div>
+      </section>
+      <section
+        className="orders-sectors"
+        aria-labelledby="orders-sectors-heading"
+      >
+        <h2 id="orders-sectors-heading">
+          <Layers size={17} aria-hidden="true" /> Ordens por setor
+        </h2>
+        <div
+          className="orders-sector-options"
+          role="group"
+          aria-label="Filtrar ordens por setor"
+        >
+          {[{ id: "", name: "Todos os setores" }, ...lookups.sectors].map(
+            (sector) => (
+              <button
+                key={sector.id}
+                type="button"
+                aria-pressed={fleet.sectorId === sector.id}
+                onClick={() => {
+                  setFleet({ ...fleet, sectorId: sector.id, equipmentId: "" });
+                  setPage(1);
+                }}
+              >
+                {sector.name}
+              </button>
+            ),
           )}
         </div>
-      </div>
+      </section>
       <div className="filters">
         <FleetFilters
           value={fleet}
+          showSector={false}
           onChange={(v) => {
             setFleet(v);
             setPage(1);
@@ -143,6 +199,7 @@ export function OrdersPage({
                 {[
                   "Ordem / referência",
                   "Equipamento",
+                  "Setor",
                   "Prioridade",
                   "Responsável",
                   "Programação",
@@ -154,59 +211,67 @@ export function OrdersPage({
               </tr>
             </thead>
             <tbody>
-              {data.data.items.map((o) => (
-                <tr key={o.id}>
-                  <td className="code">
-                    {o.sapReference || o.id}
-                    {o.sapReference && (
-                      <small>Referência SAP · cópia local</small>
-                    )}
-                    {o.sapReference && <small>{o.id}</small>}
-                    <small>{typeLabel[o.type]}</small>
-                  </td>
-                  <td>
-                    {equipmentCode(
-                      o.equipment ||
-                        lookups.equipment.find((e) => e.id === o.equipmentId),
-                    )}
-                    <small>{o.description.slice(0, 70)}</small>
-                  </td>
-                  <td>
-                    <Priority value={o.priority} />
-                  </td>
-                  <td>{o.technician?.name || "Não atribuído"}</td>
-                  <td>
-                    {fmt(o.scheduledAt)}
-                    {o.overdue && <small className="late">Atrasada</small>}
-                  </td>
-                  <td>
-                    <Badge status={o.status} />
-                  </td>
-                  <td>
-                    <div className="row-actions">
-                      <button
-                        className="small secondary"
-                        onClick={() => setDetail(o.id)}
-                        aria-label={"Histórico " + o.id}
-                      >
-                        Histórico
-                      </button>
-                      {!["COMPLETED", "CANCELLED"].includes(o.status) &&
-                        (canPlan(user) ||
-                          (user.role === "TECHNICIAN" &&
-                            user.technicianId === o.technicianId)) && (
-                          <button
-                            className="small secondary"
-                            aria-label={"Editar " + o.id}
-                            onClick={() => setEdit(o)}
-                          >
-                            Editar
-                          </button>
-                        )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {data.data.items.map((o) => {
+                const equipment =
+                  o.equipment ||
+                  lookups.equipment.find((item) => item.id === o.equipmentId);
+                const sector =
+                  equipment?.sector?.name ??
+                  lookups.sectors.find(
+                    (item) => item.id === equipment?.sectorId,
+                  )?.name;
+                return (
+                  <tr key={o.id}>
+                    <td className="code">
+                      {o.sapReference || o.id}
+                      {o.sapReference && (
+                        <small>Referência SAP · cópia local</small>
+                      )}
+                      {o.sapReference && <small>{o.id}</small>}
+                      <small>{typeLabel[o.type]}</small>
+                    </td>
+                    <td>
+                      {equipmentCode(equipment)}
+                      <small>{o.description.slice(0, 70)}</small>
+                    </td>
+                    <td>{sector ?? "—"}</td>
+                    <td>
+                      <Priority value={o.priority} />
+                    </td>
+                    <td>{o.technician?.name || "Não atribuído"}</td>
+                    <td>
+                      {fmt(o.scheduledAt)}
+                      {o.overdue && <small className="late">Atrasada</small>}
+                    </td>
+                    <td>
+                      <Badge status={o.status} />
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="small secondary"
+                          onClick={() => setDetail(o.id)}
+                          aria-label={"Histórico " + o.id}
+                        >
+                          Histórico
+                        </button>
+                        {!["COMPLETED", "CANCELLED"].includes(o.status) &&
+                          (canPlan(user) ||
+                            (user.role === "TECHNICIAN" &&
+                              user.technicianId === o.technicianId)) && (
+                            <button
+                              className="small secondary"
+                              aria-label={"Editar " + o.id}
+                              onClick={() => setEdit(o)}
+                            >
+                              Editar
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {!data.data.items.length && <Empty />}
@@ -217,7 +282,16 @@ export function OrdersPage({
         <OrderForm
           initial={edit}
           user={user}
-          lookups={lookups}
+          lookups={
+            !edit && fleet.sectorId
+              ? {
+                  ...lookups,
+                  equipment: lookups.equipment.filter(
+                    (item) => item.sectorId === fleet.sectorId,
+                  ),
+                }
+              : lookups
+          }
           onClose={() => setEdit(undefined)}
           onSaved={() => {
             setEdit(undefined);

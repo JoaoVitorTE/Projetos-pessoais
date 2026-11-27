@@ -321,6 +321,8 @@ export function FloatingNavigation({
                     "section-trigger" +
                     (activeGroup?.id === g.id ? " selected" : "")
                   }
+                  aria-label={g.label}
+                  title={g.label}
                   aria-expanded={group === g.id}
                   aria-controls={"nav-section-" + g.id}
                   onClick={(event) => {
@@ -339,6 +341,7 @@ export function FloatingNavigation({
                 </button>
                 {group === g.id && (
                   <div className="section-dropdown" id={"nav-section-" + g.id}>
+                    <p className="section-dropdown-heading">{g.label}</p>
                     {g.items.map((e) => (
                       <button
                         key={e.id}
@@ -384,6 +387,7 @@ export function FloatingNavigation({
           <button
             className="header-icon theme-toggle"
             aria-label="Alternar tema"
+            title="Alternar tema"
             onClick={onTheme}
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
@@ -411,6 +415,7 @@ export function FloatingNavigation({
             <button
               className="account-trigger"
               aria-label="Abrir menu da conta"
+              title="Abrir menu da conta"
               aria-expanded={account}
               onClick={(event) => {
                 if (!opensOnActivation(event)) return;
