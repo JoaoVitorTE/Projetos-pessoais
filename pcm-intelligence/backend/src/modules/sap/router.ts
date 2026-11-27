@@ -11,6 +11,7 @@ import {
   run,
 } from "../operations/helpers.js";
 import { scheduleLock } from "../scheduling/lifecycle.js";
+import { sapRoutine } from "./routine.js";
 import { importWorkbook } from "./import.js";
 import {
   mappingSchema,
@@ -32,8 +33,9 @@ const upload = z.object({
     .max(4194304)
     .regex(/^[A-Za-z0-9+/]+={0,2}$/),
   mapping: mappingSchema.optional(),
+  feed: z.enum(["IW38", "IW47"]).optional(),
 });
-const cloudUpload = upload.omit({ mapping: true }).extend({
+const cloudUpload = upload.omit({ mapping: true, feed: true }).extend({
   fileId: z.string().min(1).max(1024),
   modifiedAt: z.string().datetime({ offset: true }),
 });
@@ -128,6 +130,10 @@ export function workbookRoutes(db: PrismaClient) {
     next();
   });
   router.get(
+    "/routine",
+    run(async (_req, res) => res.json(await sapRoutine(db))),
+  );
+  router.get(
     "/template.xlsx",
     run(async (_req, res) => {
       res.attachment("PCM-SAP.xlsx").send(await workbookTemplate());
@@ -165,13 +171,14 @@ export function workbookRoutes(db: PrismaClient) {
     "/preview",
     workbookJson,
     run(async (req, res) => {
-      const { content, mapping } = upload.parse(req.body);
+      const { content, mapping, feed } = upload.parse(req.body);
       const settings = await db.sapWorkbookSettings.findUnique({
         where: { id: 1 },
       });
       const preview = await workbookPreview(
         Buffer.from(content, "base64"),
         mapping ?? mappingSchema.parse(settings?.mapping ?? {}),
+        feed,
       );
       res.json(
         preview.map((sheet) => ({
@@ -188,10 +195,17 @@ export function workbookRoutes(db: PrismaClient) {
       const mapping = mappingSchema.parse(req.body);
       await db.$transaction(async (tx) => {
         await scheduleLock(tx);
+        const existing = await tx.sapWorkbookSettings.findUnique({
+          where: { id: 1 },
+        });
+        const merged = {
+          ...mappingSchema.parse(existing?.mapping ?? {}),
+          ...mapping,
+        };
         await tx.sapWorkbookSettings.upsert({
           where: { id: 1 },
-          create: { mapping, actorId: actor(res).id },
-          update: { mapping, actorId: actor(res).id },
+          create: { mapping: merged, actorId: actor(res).id },
+          update: { mapping: merged, actorId: actor(res).id },
         });
         await audit(
           tx,
@@ -215,6 +229,7 @@ export function workbookRoutes(db: PrismaClient) {
         {
           filename: body.filename,
           source: "manual",
+          feed: body.feed,
           actorId: actor(res).id,
         },
         body.mapping,

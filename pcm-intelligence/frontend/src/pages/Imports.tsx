@@ -161,8 +161,10 @@ const baseOptions = {
 export function ImportsPage(props: {
   lookups: Lookups;
   onChanged: () => void;
+  initialFeed?: "IW38" | "IW47";
+  interruptionImport?: boolean;
 }) {
-  const [workbook, setWorkbook] = useState(true);
+  const [workbook, setWorkbook] = useState(!props.interruptionImport);
   return (
     <>
       <div className="tabs">
@@ -180,7 +182,10 @@ export function ImportsPage(props: {
         </button>
       </div>
       {workbook ? (
-        <SapWorkbook onChanged={props.onChanged} />
+        <SapWorkbook
+          onChanged={props.onChanged}
+          initialFeed={props.initialFeed}
+        />
       ) : (
         <LegacyImportsPage {...props} />
       )}
@@ -190,9 +195,11 @@ export function ImportsPage(props: {
 function LegacyImportsPage({
   lookups,
   onChanged,
+  interruptionImport,
 }: {
   lookups: Lookups;
   onChanged: () => void;
+  interruptionImport?: boolean;
 }) {
   const sources = useResource<Source[]>("/imports/sources"),
     specs = useResource<Spec>("/imports/specs"),
@@ -356,12 +363,24 @@ function LegacyImportsPage({
   return (
     <>
       <section className="panel import-intro">
-        <h2>Exportação autorizada → prévia → atualização local</h2>
-        <p>
-          Exporte uma listagem no SAP conforme as permissões da empresa e envie
-          CSV/XLSX. Não há conexão automática ou envio de alterações ao SAP. Os
-          adaptadores não presumem o layout real de nenhuma transação.
-        </p>
+        <h2>
+          {interruptionImport
+            ? "Importar registros de paradas"
+            : "Exportação autorizada → prévia → atualização local"}
+        </h2>
+        {interruptionImport ? (
+          <p>
+            Envie um CSV ou XLSX com identificador, equipamento, data e hora de
+            início, término quando conhecido, tipo e motivo. Reutilize a origem
+            nos próximos envios para atualizar registros existentes.
+          </p>
+        ) : (
+          <p>
+            Exporte uma listagem no SAP conforme as permissões da empresa e
+            envie CSV/XLSX. Não há conexão automática ou envio de alterações ao
+            SAP. Os adaptadores não presumem o layout real de nenhuma transação.
+          </p>
+        )}
         <p>
           <strong>Reutilize a identificação da mesma base SAP:</strong> o número
           externo e o tipo de registro identificam o item, mesmo que o arquivo
@@ -397,12 +416,16 @@ function LegacyImportsPage({
             onChange={(e) => choose(e.target.value)}
           >
             <option value="">Selecione uma origem ou crie a primeira</option>
-            {sources.data?.map((s) => (
-              <option value={s.id} key={s.id}>
-                {s.name} · {targetLabel[s.target]} · base {s.scope}
-                {!s.active && " · Inativa"}
-              </option>
-            ))}
+            {sources.data
+              ?.filter(
+                (s) => !interruptionImport || s.target === "INTERRUPTIONS",
+              )
+              .map((s) => (
+                <option value={s.id} key={s.id}>
+                  {s.name} · {targetLabel[s.target]} · base {s.scope}
+                  {!s.active && " · Inativa"}
+                </option>
+              ))}
           </select>
         </label>
         {sourceNotice && <p role="status">{sourceNotice}</p>}
@@ -1082,6 +1105,8 @@ function LegacyImportsPage({
       )}
       {creating && (
         <SourceForm
+          interruptionImport={interruptionImport}
+          demo={lookups.mode === "demo"}
           onClose={() => setCreating(false)}
           onSaved={(s) => {
             sources.refresh();
@@ -1307,16 +1332,20 @@ function SourceMaintenance({
 function SourceForm({
   onClose,
   onSaved,
+  interruptionImport,
+  demo,
 }: {
   onClose: () => void;
   onSaved: (s: Source) => void;
+  interruptionImport?: boolean;
+  demo: boolean;
 }) {
   const [form, setForm] = useState({
-      name: "",
-      system: "SAP",
-      scope: "SAP-PRINCIPAL",
-      target: "ORDERS",
-      isDemo: true,
+      name: interruptionImport ? "Registros de paradas" : "",
+      system: interruptionImport ? "GENERIC" : "SAP",
+      scope: interruptionImport ? "PARADAS-PRINCIPAL" : "SAP-PRINCIPAL",
+      target: interruptionImport ? "INTERRUPTIONS" : "ORDERS",
+      isDemo: demo,
     }),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);

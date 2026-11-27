@@ -36,9 +36,23 @@ export const tabs = {
     field("orderType", "Tipo de ordem", false, "Tipo"),
     field("orderNumber", "Ordem", true, "Nº ordem", "Número da ordem"),
     field("noteNumber", "Nota", false, "Número da nota"),
-    field("baseDate", "Data-base", false, "Data base"),
+    field(
+      "baseDate",
+      "Data-base",
+      false,
+      "Data base",
+      "Data início base",
+      "Início base",
+    ),
     field("entryDate", "Data de entrada", false, "Data entrada"),
-    field("description", "Descritivo", false, "Descrição", "Texto breve"),
+    field(
+      "description",
+      "Descritivo",
+      false,
+      "Descrição",
+      "Texto breve",
+      "Txt.breve",
+    ),
     field("importance", "Importância", false, "Prioridade"),
     field("systemStatus", "Status do sistema", false, "Status sistema"),
     field(
@@ -64,6 +78,17 @@ export const tabs = {
     ),
     field("tag", "TAG"),
     field("sector", "Setor"),
+    field(
+      "planNumber",
+      "Plano de manutenção",
+      false,
+      "Plano manut.",
+      "Nº do plano de manutenção",
+      "Plano de manut.",
+      "Plano",
+    ),
+    field("planTitle", "Descrição do plano", false, "Texto do plano"),
+    field("planItem", "Item de manutenção", false, "Item manut."),
   ],
   Notas: [
     field("noteNumber", "Nota", true, "Número da nota"),
@@ -125,6 +150,8 @@ export const tabs = {
   ],
 };
 export type Tab = keyof typeof tabs;
+export type SapFeed = "IW38" | "IW47";
+const feedTabs = { IW38: "Ordens", IW47: "Apontamentos" } as const;
 export const tabNames = Object.keys(tabs) as Tab[];
 export const mappingSchema = z
   .record(
@@ -146,13 +173,31 @@ const normalize = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
 
-export async function workbookPreview(buffer: Buffer, mapping: Mapping) {
+export async function workbookPreview(
+  buffer: Buffer,
+  mapping: Mapping,
+  feed?: SapFeed,
+) {
   const workbook = await loadWorkbook(buffer);
+  const requested = feed ? feedTabs[feed] : undefined;
+  const sheets = workbook.worksheets.filter(
+    (sheet) => sheet.state === "visible" && sheet.actualRowCount > 0,
+  );
+  const source = requested
+    ? (workbook.getWorksheet(requested) ??
+      workbook.getWorksheet(feed!) ??
+      (sheets.length === 1 ? sheets[0] : undefined))
+    : undefined;
+  if (requested && !source)
+    throw new HttpError(
+      400,
+      `Selecione uma exportação ${feed} com uma única aba de dados ou uma aba chamada ${requested}.`,
+    );
   return Promise.all(
-    tabNames.map(async (tab) => {
+    (requested ? [requested] : tabNames).map(async (tab) => {
       const parsed = await readFile(buffer, "sap.xlsx", {
         workbook,
-        sheet: tab,
+        sheet: source?.name ?? tab,
         allowEmpty: true,
         allowUnmapped: true,
       }).catch((error) => {

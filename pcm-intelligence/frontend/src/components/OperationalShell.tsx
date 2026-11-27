@@ -153,6 +153,7 @@ export function OperationalShell({
                   />
                 ) : tab === "interruptions" ? (
                   <InterruptionsPage
+                    onNavigate={navigate}
                     user={user}
                     lookups={lookups.data}
                     search={q}
@@ -160,7 +161,7 @@ export function OperationalShell({
                 ) : tab === "orders" ? (
                   <OrdersPage
                     user={user}
-                    initialCreate={route.options.createOrder}
+                    initialCreate={route.options.createReminder}
                     onNavigate={navigate}
                     lookups={lookups.data}
                     search={q}
@@ -196,6 +197,8 @@ export function OperationalShell({
                   />
                 ) : tab === "imports" ? (
                   <ImportsPage
+                    initialFeed={route.options.sapFeed}
+                    interruptionImport={route.options.interruptionImport}
                     lookups={lookups.data}
                     onChanged={refreshLookups}
                   />

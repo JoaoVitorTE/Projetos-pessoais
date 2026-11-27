@@ -1296,7 +1296,6 @@ button,
   .orders-intake .row-actions button {
     min-height: 44px;
   }
-
 }
 
 .legal-links {
@@ -1336,4 +1335,42 @@ button,
   margin: 1px 0 0;
   flex: none;
   accent-color: var(--green);
+}
+
+.sap-routine {
+  margin-block: 16px;
+}
+
+.sap-feed-list,
+.sap-recurrence-list {
+  display: grid;
+  gap: 8px;
+}
+
+.sap-feed-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.sap-feed-list small,
+.sap-recurrence-list small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.sap-recurrence-list > details {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.sap-recurrence-list li {
+  overflow-wrap: anywhere;
 }
