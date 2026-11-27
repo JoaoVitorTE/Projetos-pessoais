@@ -181,7 +181,7 @@ export function HomePage({
                 ) : (
                   <ClipboardList size={17} />
                 )}
-                {canPlan(user) ? "Nova ordem" : "Ordens de serviço"}
+                {canPlan(user) ? "Novo planejamento" : "Ordens de serviço"}
                 <ArrowRight size={15} />
               </button>
               {canPlan(user) && (

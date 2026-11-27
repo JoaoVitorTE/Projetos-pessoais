@@ -20,6 +20,7 @@ import {
   run,
 } from "./helpers.js";
 import { dashboard } from "./metrics.js";
+import { remindersRouter } from "./reminders.js";
 import { ordersRouter } from "./orders.js";
 import { plansRouter } from "./plans.js";
 import { thirdPartiesRouter } from "./third-parties.js";
@@ -58,6 +59,7 @@ const interruptionBody = z
 export function createOperationsRouter(db: PrismaClient) {
   const r = Router();
   r.use(equipmentLifecycleRouter(db));
+  r.use(remindersRouter(db));
   r.get(
     "/lookups",
     run(async (_req, res) => {

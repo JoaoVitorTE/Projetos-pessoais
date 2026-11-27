@@ -180,6 +180,9 @@ export const statusLabel: Record<string, string> = {
 };
 export const typeLabel: Record<string, string> = {
   CORRECTIVE: "Corretiva",
+  CORRECTIVE_PLANNED: "Corretiva programada",
+  IMPROVEMENT: "Melhoria",
+  CORRECTIVE_INDUSTRIAL: "Corretiva industrial",
   PREVENTIVE: "Preventiva",
   PREDICTIVE: "Preditiva",
   LUBRICATION: "Lubrificação",

@@ -1,5 +1,6 @@
+import { MaintenanceReminders } from "./MaintenanceReminders";
 import { useState, useEffect } from "react";
-import { ClipboardPlus, Download, FileInput, Layers } from "lucide-react";
+import { Download, FileInput } from "lucide-react";
 import type { Navigate } from "../types/navigation";
 import { api } from "../services/api";
 import { useResource } from "../hooks/useResource";
@@ -52,9 +53,7 @@ export function OrdersPage({
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
     [overdue, setOverdue] = useState(initialOverdue),
-    [edit, setEdit] = useState<Order | null | undefined>(
-      initialCreate && canPlan(user) ? null : undefined,
-    ),
+    [edit, setEdit] = useState<Order | undefined>(),
     [detail, setDetail] = useState(initialRecordId),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
@@ -92,20 +91,13 @@ export function OrdersPage({
         aria-labelledby="orders-intake-heading"
       >
         <span className="orders-intake-icon" aria-hidden="true">
-          <ClipboardPlus size={24} />
+          <FileInput size={24} />
         </span>
         <div>
-          <h2 id="orders-intake-heading">Entrada de ordens</h2>
-          <p>
-            Registros locais e cópias de exportações. Sem alterações no SAP.
-          </p>
+          <h2 id="orders-intake-heading">Ordens do SAP</h2>
+          <p>Consulte ordens importadas e registros históricos do PCM.</p>
         </div>
         <div className="row-actions">
-          {canPlan(user) && (
-            <button onClick={() => setEdit(null)}>
-              <ClipboardPlus size={16} /> Nova ordem
-            </button>
-          )}
           {canPlan(user) && (
             <button className="secondary" onClick={() => onNavigate("imports")}>
               <FileInput size={16} /> Importar planilha
@@ -116,39 +108,9 @@ export function OrdersPage({
           </button>
         </div>
       </section>
-      <section
-        className="orders-sectors"
-        aria-labelledby="orders-sectors-heading"
-      >
-        <h2 id="orders-sectors-heading">
-          <Layers size={17} aria-hidden="true" /> Ordens por setor
-        </h2>
-        <div
-          className="orders-sector-options"
-          role="group"
-          aria-label="Filtrar ordens por setor"
-        >
-          {[{ id: "", name: "Todos os setores" }, ...lookups.sectors].map(
-            (sector) => (
-              <button
-                key={sector.id}
-                type="button"
-                aria-pressed={fleet.sectorId === sector.id}
-                onClick={() => {
-                  setFleet({ ...fleet, sectorId: sector.id, equipmentId: "" });
-                  setPage(1);
-                }}
-              >
-                {sector.name}
-              </button>
-            ),
-          )}
-        </div>
-      </section>
       <div className="filters">
         <FleetFilters
           value={fleet}
-          showSector={false}
           onChange={(v) => {
             setFleet(v);
             setPage(1);
@@ -185,6 +147,25 @@ export function OrdersPage({
           Somente atrasadas
         </label>
       </div>
+      {canPlan(user) && (
+        <MaintenanceReminders
+          key={fleet.sectorId + ":" + fleet.equipmentId}
+          user={user}
+          lookups={
+            fleet.sectorId
+              ? {
+                  ...lookups,
+                  equipment: lookups.equipment.filter(
+                    (item) => item.sectorId === fleet.sectorId,
+                  ),
+                }
+              : lookups
+          }
+          sectorId={fleet.sectorId}
+          equipmentId={fleet.equipmentId}
+          initialCreate={initialCreate && !fleet.sectorId && !fleet.equipmentId}
+        />
+      )}
       {notice && (
         <p role="status" className="success">
           {notice}
@@ -282,16 +263,7 @@ export function OrdersPage({
         <OrderForm
           initial={edit}
           user={user}
-          lookups={
-            !edit && fleet.sectorId
-              ? {
-                  ...lookups,
-                  equipment: lookups.equipment.filter(
-                    (item) => item.sectorId === fleet.sectorId,
-                  ),
-                }
-              : lookups
-          }
+          lookups={lookups}
           onClose={() => setEdit(undefined)}
           onSaved={() => {
             setEdit(undefined);
@@ -311,7 +283,7 @@ function OrderForm({
   onClose,
   onSaved,
 }: {
-  initial: Order | null;
+  initial: Order;
   user: User;
   lookups: Lookups;
   onClose: () => void;
@@ -352,10 +324,7 @@ function OrderForm({
       ]
     : ["OPEN"];
   return (
-    <Modal
-      title={initial ? "Editar ordem " + initial.id : "Nova ordem local"}
-      onClose={onClose}
-    >
+    <Modal title={"Editar ordem " + initial.id} onClose={onClose}>
       <form
         className="form-grid"
         onSubmit={async (e) => {
@@ -390,8 +359,8 @@ function OrderForm({
                     changeNote: form.changeNote,
                   }
               : data;
-            await api("/orders" + (initial ? "/" + initial.id : ""), {
-              method: initial ? "PATCH" : "POST",
+            await api("/orders/" + initial.id, {
+              method: "PATCH",
               body: JSON.stringify(body),
             });
             onSaved();

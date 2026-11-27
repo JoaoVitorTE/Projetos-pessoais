@@ -413,6 +413,9 @@ export async function importWorkbook(
                       localOrderId = matches[0].id;
                     const types: Record<string, string> = {
                       CORR: "CORRECTIVE",
+                      CORP: "CORRECTIVE_PLANNED",
+                      MELH: "IMPROVEMENT",
+                      CORI: "CORRECTIVE_INDUSTRIAL",
                       LUBR: "LUBRICATION",
                       PREV: "PREVENTIVE",
                       INSP: "INSPECTION",
