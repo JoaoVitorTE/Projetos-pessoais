@@ -810,3 +810,367 @@ button,
     margin: 0;
   }
 }
+
+/* The same painted-steel palette connects the shift overview and the workspace. */
+:root {
+  --bg: #edf2f4;
+  --surface-raised: #f6f9fa;
+  --line: #d5e0e5;
+  --rail-surface: #f8fbfc;
+  --hero-surface: #081d2b;
+  --hero-ink: #f4fbff;
+  --hero-muted: #c1d7df;
+  --hero-action: #a3e5ce;
+  --hero-focus: #c4f7e3;
+}
+
+:root[data-theme="dark"] {
+  --bg: #101c25;
+  --surface: #192a36;
+  --surface-raised: #203441;
+  --line: #364c5c;
+  --rail-surface: #14242f;
+}
+
+.workspace-breadcrumb {
+  min-height: 40px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-content .page-title h1 {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+}
+
+.workspace-content[data-module="home"] > .page-title h1 {
+  font-size: clamp(1.65rem, 2.4vw, 2.1rem);
+}
+
+.workspace-content .block-heading h2 {
+  font-size: 1.35rem;
+}
+
+.home-overview {
+  grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.home-overview .home-intro {
+  min-height: 278px;
+  padding: clamp(24px, 3.25vw, 48px);
+  border: 1px solid #305563;
+  color: var(--hero-ink);
+  background:
+    linear-gradient(90deg, #081d2b 1%, #081d2bd9 42%, #081d2b20 100%),
+    url("/brand/maintenance-floor.webp") center right / cover,
+    var(--hero-surface);
+  box-shadow: 0 12px 30px #061c2c24;
+}
+
+.home-overview .home-intro h2 {
+  max-width: 12ch;
+  font-size: clamp(2.65rem, 5vw, 4.25rem);
+  line-height: 0.98;
+}
+
+.home-overview .home-intro p {
+  max-width: 33ch;
+  color: var(--hero-muted);
+  font-size: 0.875rem;
+}
+
+.home-overview .home-intro .row-actions {
+  margin-top: 18px;
+}
+
+.home-primary {
+  min-height: 44px;
+  border-color: var(--hero-action);
+  border-radius: 9px;
+  background: var(--hero-action);
+  color: #12392f;
+}
+
+.home-intro .home-refresh {
+  flex-wrap: wrap;
+  column-gap: 12px;
+  row-gap: 6px;
+}
+
+.home-refresh .secondary {
+  min-height: 36px;
+  border-color: #8ab2bf;
+  background: #0c2835;
+  color: var(--hero-ink);
+}
+
+.home-refresh .secondary:hover:not(:disabled) {
+  background: #214959;
+}
+
+.home-intro button:focus-visible {
+  outline-color: var(--hero-focus);
+}
+
+.home-overview .home-today {
+  padding: clamp(16px, 2vw, 24px);
+  border-top: 1px solid var(--line);
+}
+
+.home-today .block-heading {
+  align-items: flex-start;
+  gap: 8px 14px;
+  margin-bottom: 14px;
+}
+
+.home-today .block-heading .text-button {
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+.home-agenda-date {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.home-overview .home-empty {
+  align-self: stretch;
+  width: 100%;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface-raised);
+}
+
+.home-overview .today-list > button {
+  border-bottom-color: var(--line);
+}
+
+.today-list .today-time {
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-metrics {
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.home-metric {
+  justify-content: flex-start;
+  box-shadow: none;
+  padding: clamp(13px, 1.8vw, 22px);
+}
+
+.home-metric .metric-top {
+  margin-bottom: 13px;
+}
+
+.home-metric .metric-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.home-metric > b {
+  margin-bottom: 5px;
+  font-size: clamp(2.1rem, 3.7vw, 3.15rem);
+  line-height: 1;
+}
+
+.home-metric > strong {
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+
+.home-metric > small {
+  line-height: 1.4;
+}
+
+.amber .metric-icon {
+  color: var(--warning-ink);
+  background: color-mix(in srgb, var(--warning-ink) 12%, var(--surface));
+}
+
+.home-worklist {
+  gap: 16px;
+}
+
+.home-worklist .home-shortcuts .shortcut-card {
+  background: var(--surface-raised);
+}
+
+.home-worklist .home-shortcuts .shortcut-card:hover {
+  background: var(--soft);
+}
+
+.dashboard-indicator > svg {
+  box-sizing: content-box;
+  padding: 7px;
+  margin: 0;
+  border-radius: 9px;
+  background: var(--blue-soft);
+}
+
+/* The entrance shares the factory photograph and palette with the shift overview. */
+.modern-login .login-story {
+  background:
+    linear-gradient(90deg, #081d2bf5, #081d2b8c 74%, #081d2b66),
+    url("/brand/maintenance-floor.webp") 62% center / cover,
+    var(--hero-surface);
+  color: var(--hero-ink);
+}
+
+.modern-login .login-story h1 {
+  max-width: 13ch;
+  font-size: clamp(3.1rem, 5.8vw, 6rem);
+  line-height: 0.95;
+  margin: 0;
+}
+
+.modern-login .login-story > p,
+.login-features p {
+  color: var(--hero-muted);
+}
+
+.modern-login .login-story > p {
+  font-size: 0.93rem;
+  line-height: 1.6;
+}
+
+.login-features > div > span {
+  color: var(--hero-action);
+  background: #143743;
+  border-color: #326571;
+}
+
+.modern-login .login-box {
+  padding: clamp(22px, 3.2vw, 42px);
+  box-shadow: var(--shadow-raised);
+}
+
+.modern-login .login-box h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.55rem);
+}
+
+.modern-login .login-box > p,
+.modern-login label,
+.modern-login input {
+  font-size: 0.875rem;
+}
+
+.modern-login input {
+  min-height: 46px;
+  background: var(--surface-raised);
+}
+
+@media (min-width: 1100px) {
+  .workspace-shell {
+    grid-template-columns: 226px minmax(0, 1fr);
+  }
+
+  .workspace-shell > .floating-header {
+    background: var(--rail-surface);
+    padding-top: 22px;
+  }
+
+  .floating-header .header-leading {
+    min-height: 52px;
+    justify-content: flex-start;
+    padding: 0 7px 15px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .floating-header .section-trigger {
+    min-height: 46px;
+    border: 1px solid transparent;
+  }
+
+  .floating-header .section-trigger.selected {
+    border-color: var(--line);
+    box-shadow: inset 3px 0 var(--blue);
+  }
+
+  .workspace-content {
+    padding-top: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .modern-login .login-story {
+    justify-content: center;
+    padding-block: 116px 50px;
+  }
+}
+
+@media (max-width: 899px) {
+  .modern-login {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modern-login .login-story {
+    display: block;
+    min-height: 0;
+    padding: clamp(24px, 5vw, 42px);
+  }
+
+  .modern-login .login-story > .brand-lockup {
+    position: static;
+    margin-bottom: 20px;
+  }
+
+  .modern-login .login-story h1 {
+    font-size: clamp(2.15rem, 6.5vw, 3.3rem);
+  }
+
+  .modern-login .login-story > p {
+    margin-bottom: 0;
+  }
+
+  .modern-login .login-features {
+    display: none;
+  }
+
+  .modern-login .login-form {
+    padding: 58px 16px 24px;
+  }
+
+  .modern-login .login-theme {
+    top: 9px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 800px) {
+  .home-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-overview .home-intro {
+    min-height: 246px;
+    background-image:
+      linear-gradient(90deg, #081d2bfa 1%, #081d2bba 62%, #081d2b36),
+      url("/brand/maintenance-floor.webp");
+  }
+
+  .home-metric > strong {
+    min-height: 2.7em;
+  }
+
+  .home-overview .home-today {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 370px) {
+  .home-today .block-heading {
+    flex-wrap: wrap;
+  }
+}

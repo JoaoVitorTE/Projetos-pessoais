@@ -19,7 +19,14 @@ import { State } from "../components/OperationalUI";
 import { equipmentCode, type Lookups, type User } from "../types/operations";
 import type { Navigate, ModuleId } from "../types/navigation";
 import { allowedEntries } from "../components/Navigation";
-import { dateTime, clock } from "../components/scheduling/dates";
+import { dateTime, clock, ZONE } from "../components/scheduling/dates";
+const agendaDate = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: ZONE,
+  weekday: "long",
+  day: "numeric",
+  month: "short",
+});
+
 export type HomeData = {
   asOf: string;
   mode: string;
@@ -148,10 +155,10 @@ export function HomePage({
   return (
     <>
       <div className="home-overview">
-        <div className="home-intro">
+        <section className="home-intro" aria-labelledby="home-overview-title">
           <div>
-            <h2>Visão da operação</h2>
-            <p>Ordens, programação da equipe e manutenção preventiva.</p>
+            <h2 id="home-overview-title">Visão da operação</h2>
+            <p>Ordens de serviço, programação da equipe e manutenção preventiva.</p>
             <div className="row-actions">
               <button
                 className="home-primary"
@@ -163,7 +170,7 @@ export function HomePage({
             </div>
           </div>
           <div className="home-refresh">
-            <span>
+            <span role="status">
               {data
                 ? "Atualizado em " + dateTime(data.asOf)
                 : loading
@@ -179,13 +186,18 @@ export function HomePage({
               Atualizar
             </button>
           </div>
-        </div>
+        </section>
         {data && (
-          <section className="panel home-today">
+          <section className="panel home-today" aria-labelledby="home-agenda-title">
             <div className="block-heading">
-              <h2>
-                <CalendarClock size={19} /> Agenda de hoje
-              </h2>
+              <div>
+                <h2 id="home-agenda-title">
+                  <CalendarClock size={19} aria-hidden="true" /> Agenda de hoje
+                </h2>
+                <time className="home-agenda-date" dateTime={data.asOf}>
+                  {agendaDate.format(new Date(data.asOf))}
+                </time>
+              </div>
               <button
                 className="text-button"
                 onClick={() => onNavigate("scheduling")}
@@ -273,16 +285,16 @@ export function HomePage({
                 className={"home-metric " + k.tone}
                 key={k.label}
                 onClick={() => onNavigate(k.module)}
-                aria-label={"Abrir " + k.label.toLowerCase()}
+                aria-label={`${k.label}: ${k.value}. ${k.detail}`}
               >
                 <span className="metric-top">
                   <span className="metric-icon">
-                    <k.icon size={21} />
+                    <k.icon size={19} aria-hidden="true" />
                   </span>
-                  <ArrowUpRight size={16} />
+                  <ArrowUpRight size={16} aria-hidden="true" />
                 </span>
-                <b>{k.value}</b>
                 <strong>{k.label}</strong>
+                <b>{k.value}</b>
                 <small>{k.detail}</small>
               </button>
             ))}
