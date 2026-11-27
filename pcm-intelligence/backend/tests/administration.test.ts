@@ -276,6 +276,24 @@ describe("Cadastros, permissões e rastreabilidade", () => {
     expect(JSON.stringify(logs)).not.toContain(temporary);
     expect(JSON.stringify(logs)).not.toContain("passwordHash");
   });
+  it("impede que um administrador altere outro do mesmo nível", async () => {
+    const data = {
+      name: tag + " Administrador",
+      email: tag.toLowerCase() + "-peer@pcm.demo",
+      role: "ADMIN",
+      technicianId: null,
+      active: true,
+    };
+    const created = await call("post", "/admin/users", data);
+    expect(created.status).toBe(201);
+    users.push(created.body.user.id);
+    const path = "/admin/users/" + created.body.user.id;
+    expect(
+      (await call("patch", path, { ...data, name: "Alteração" })).status,
+    ).toBe(403);
+    expect((await call("post", path + "/reset-password")).status).toBe(403);
+    expect((await call("delete", path)).status).toBe(403);
+  });
   it("protege o próprio administrador contra desativação ou perda de perfil", async () => {
     const me = (await call("get", "/auth/me")).body;
     expect(

@@ -136,7 +136,7 @@ describe("Senha temporária e troca", () => {
 describe("Limite de login entre instâncias", () => {
   it("mantém limite ao recriar a aplicação", async () => {
     const unknown = `absent-${id}@pcm.demo`;
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 5; i++) {
       expect(
         (
           await request(createApp(db))

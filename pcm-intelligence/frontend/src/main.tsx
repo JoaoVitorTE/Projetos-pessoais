@@ -20,6 +20,7 @@ import "./visual.css";
 import { api } from "./services/api";
 import { OperationalShell } from "./components/OperationalShell";
 import { PasswordForm } from "./components/PasswordForm";
+import { LegalLinks } from "./components/LegalLinks";
 import { Brand } from "./components/Brand";
 import type { User } from "./types/operations";
 function App() {
@@ -54,12 +55,10 @@ function App() {
       <main className="login modern-login">
         <section className="login-story">
           <Brand light />
-          <h1>
-            Planejamento e controle da manutenção
-          </h1>
+          <h1>Planejamento e controle da manutenção</h1>
           <p>
-            Programe a equipe, acompanhe ordens de serviço e consulte o histórico
-            de execução.
+            Programe a equipe, acompanhe ordens de serviço e consulte o
+            histórico de execução.
           </p>
           <div className="login-features">
             {[
@@ -120,7 +119,11 @@ function App() {
                   setUser(
                     await api("/auth/login", {
                       method: "POST",
-                      body: JSON.stringify({ email, password }),
+                      body: JSON.stringify({
+                        email,
+                        password,
+                        termsVersion: "2026-11-27",
+                      }),
                     }),
                   );
                   setPassword("");
@@ -166,6 +169,28 @@ function App() {
                   {error}
                 </div>
               )}
+              <label className="login-terms">
+                <input type="checkbox" required />
+                <span>
+                  Li e aceito os{" "}
+                  <a
+                    href="/docs/privacidade.html#termos"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Termos de uso
+                  </a>{" "}
+                  e tomei ciência da{" "}
+                  <a
+                    href="/docs/privacidade.html#privacidade"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Política de privacidade
+                  </a>
+                  .
+                </span>
+              </label>
               <button disabled={busy}>
                 {busy ? "Autenticando…" : "Entrar na plataforma"}
                 <ArrowRight size={17} />
@@ -186,6 +211,7 @@ function App() {
               <Download size={16} />
               Manual de primeiro acesso e treinamento
             </a>
+            <LegalLinks cookieNotice />
           </div>
         </section>
       </main>

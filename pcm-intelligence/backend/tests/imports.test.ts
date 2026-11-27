@@ -11,6 +11,7 @@ const db = new PrismaClient(),
   tag = "QA-IMP-" + randomUUID().slice(0, 8).toUpperCase();
 let admin: string[],
   viewer: string[],
+  planner: string[],
   tech: string[],
   source: any,
   first: any,
@@ -100,8 +101,8 @@ async function apply(id: string, acceptValidOnly = false) {
 }
 beforeAll(async () => {
   await db.loginThrottle.deleteMany();
-  [admin, viewer, tech] = await Promise.all(
-    ["admin", "viewer", "technician"].map(async (role) => {
+  [admin, viewer, tech, planner] = await Promise.all(
+    ["admin", "viewer", "technician", "planner"].map(async (role) => {
       const r = await request(app)
         .post("/api/auth/login")
         .set("Origin", origin)
@@ -148,6 +149,30 @@ afterAll(async () => {
   await db.importBatch.deleteMany({ where: { id: { in: batches } } });
   await db.importSource.deleteMany({ where: { id: { in: sources } } });
   await db.$disconnect();
+});
+it("restringe o lote de outro usuário e protege a prévia quando a chave está configurada", async () => {
+  const batch = await upload([row(tag + "-PRIVADO")]);
+  const path = "/imports/" + batch.id;
+  expect((await call("get", path, undefined, planner)).status).toBe(404);
+  expect((await call("post", path + "/stop", {}, planner)).status).toBe(404);
+  const listing = await call("get", "/imports", undefined, planner);
+  expect(listing.status).toBe(200);
+  expect(
+    listing.body.items.some((item: { id: string }) => item.id === batch.id),
+  ).toBe(false);
+  expect((await call("get", path)).status).toBe(200);
+  if (process.env.PCM_IMPORT_ENCRYPTION_KEY) {
+    const stored = await db.importBatch.findUniqueOrThrow({
+      where: { id: batch.id },
+    });
+    expect(stored.preview).toMatchObject({ sealed: "aes-256-gcm-v1" });
+    expect(JSON.stringify(stored.preview)).not.toContain(tag + "-PRIVADO");
+    await preview(batch.id);
+    const planned = await db.importBatch.findUniqueOrThrow({
+      where: { id: batch.id },
+    });
+    expect(planned.payload).toMatchObject({ sealed: "aes-256-gcm-v1" });
+  }
 });
 describe("Leitura segura de arquivos", () => {
   it("preserva zeros em CSV UTF-8 e respeita aspas", async () => {

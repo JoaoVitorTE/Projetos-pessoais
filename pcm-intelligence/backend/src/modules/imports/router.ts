@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import type { PrismaClient } from "@prisma/client";
 import {
   actor,
+  type Actor,
   audit,
   HttpError,
   must,
@@ -22,6 +23,7 @@ import {
   targets,
   type Target,
 } from "./specs.js";
+import { protectImportJson, readImportJson } from "./protected-json.js";
 import { applyChunk, planImport } from "./engine.js";
 import { undoChunk, undoPreview } from "./undo.js";
 async function purgeExpired(db: PrismaClient) {
@@ -37,6 +39,9 @@ async function purgeExpired(db: PrismaClient) {
     },
   });
 }
+function visibleBatches(user: Actor) {
+  return user.role.name === "PLANNER" ? { actorId: user.id } : {};
+}
 export function importsRouter(db: PrismaClient) {
   const r = Router();
   r.use((req, res, next) => {
@@ -45,6 +50,21 @@ export function importsRouter(db: PrismaClient) {
       next();
     } catch (e) {
       next(e);
+    }
+  });
+  r.param("id", async (_req, res, next, id: string) => {
+    try {
+      const user = actor(res);
+      if (user.role.name === "PLANNER")
+        must(
+          await db.importBatch.findFirst({
+            where: { id, ...visibleBatches(user) },
+            select: { id: true },
+          }),
+        );
+      next();
+    } catch (error) {
+      next(error);
     }
   });
   r.get(
@@ -92,7 +112,7 @@ export function importsRouter(db: PrismaClient) {
     }),
   );
   r.patch(
-    "/sources/:id",
+    "/sources/:sourceId",
     run(async (req, res) => {
       const data = z
         .object({
@@ -104,7 +124,9 @@ export function importsRouter(db: PrismaClient) {
         .parse(req.body);
       const after = await db.$transaction(async (tx) => {
         const before = must(
-          await tx.importSource.findUnique({ where: { id: req.params.id } }),
+          await tx.importSource.findUnique({
+            where: { id: req.params.sourceId },
+          }),
         );
         const after = await tx.importSource.update({
           where: { id: before.id },
@@ -120,9 +142,9 @@ export function importsRouter(db: PrismaClient) {
     }),
   );
   r.delete(
-    "/sources/:id",
+    "/sources/:sourceId",
     run(async (req, res) => {
-      const id = req.params.id;
+      const id = req.params.sourceId;
       const outcome = await db.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT id FROM "ImportSource" WHERE id = ${id} FOR UPDATE`;
         const before = must(
@@ -356,6 +378,7 @@ export function importsRouter(db: PrismaClient) {
       const previous = await db.importBatch.findFirst({
         where: {
           sourceConfigId: source.id,
+          ...visibleBatches(actor(res)),
           fileHash: hash,
           status: { in: ["APPLIED", "PARTIAL"] },
         },
@@ -377,7 +400,7 @@ export function importsRouter(db: PrismaClient) {
             status: "UPLOADED",
             rowCount: parsed.rows.length,
             errors: [],
-            preview: snapshot(parsed),
+            preview: protectImportJson(parsed, "preview"),
             expiresAt: new Date(Date.now() + 3600000),
             isDemo: source.isDemo,
           },
@@ -438,7 +461,7 @@ export function importsRouter(db: PrismaClient) {
       const rows = await planImport(
         db,
         must(batch.sourceConfig),
-        batch.preview as any,
+        readImportJson(batch.preview, "preview") as any,
         data.mapping,
         data.options,
       );
@@ -453,12 +476,15 @@ export function importsRouter(db: PrismaClient) {
             status: "PREVIEW",
             mapping: data.mapping,
             options: snapshot(data.options),
-            payload: snapshot({
-              rows,
-              options: data.options,
-              confirmed: false,
-              formatVersion: 2,
-            }),
+            payload: protectImportJson(
+              {
+                rows,
+                options: data.options,
+                confirmed: false,
+                formatVersion: 2,
+              },
+              "payload",
+            ),
             errors: rows
               .filter((r) => ["INVALID", "CONFLICT"].includes(r.action))
               .map((r) => ({
@@ -506,7 +532,7 @@ export function importsRouter(db: PrismaClient) {
         batch.expiresAt < new Date()
       )
         throw new HttpError(409, "Gere uma prévia válida antes de confirmar");
-      const payload = batch.payload as any;
+      const payload = readImportJson(batch.payload, "payload") as any;
       if (
         payload.rows.some((r: any) =>
           ["INVALID", "CONFLICT"].includes(r.action),
@@ -526,7 +552,13 @@ export function importsRouter(db: PrismaClient) {
       await db.$transaction(async (tx) => {
         await tx.importBatch.update({
           where: { id: batch.id },
-          data: { payload: { ...payload, confirmed: true }, status: "RUNNING" },
+          data: {
+            payload: protectImportJson(
+              { ...payload, confirmed: true },
+              "payload",
+            ),
+            status: "RUNNING",
+          },
         });
         await audit(tx, actor(res), "IMPORT_CONFIRMED", "ImportBatch", {
           id: batch.id,
@@ -605,8 +637,10 @@ export function importsRouter(db: PrismaClient) {
           .default(1)
           .parse(req.query.page),
         limit = 20;
+      const where = visibleBatches(actor(res));
       const [items, total] = await Promise.all([
         db.importBatch.findMany({
+          where,
           select: {
             id: true,
             status: true,
@@ -623,7 +657,7 @@ export function importsRouter(db: PrismaClient) {
           skip: (page - 1) * limit,
           take: limit,
         }),
-        db.importBatch.count(),
+        db.importBatch.count({ where }),
       ]);
       res.json(pageResponse(items, total, page, limit));
     }),

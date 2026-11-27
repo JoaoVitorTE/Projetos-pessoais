@@ -10,6 +10,7 @@ import { Search, ShieldCheck, BookOpen, ChevronRight } from "lucide-react";
 import type { User, Lookups } from "../types/operations";
 import { useResource } from "../hooks/useResource";
 import { useNavigation } from "../hooks/useNavigation";
+import { LegalLinks } from "./LegalLinks";
 import { State } from "./OperationalUI";
 import { PasswordForm } from "./PasswordForm";
 import { FloatingNavigation, allowedEntries } from "./Navigation";
@@ -223,6 +224,7 @@ export function OperationalShell({
           </span>
           <span>Planejar com clareza. Executar com controle.</span>
         </footer>
+        <LegalLinks />
       </main>
       {tutorial && (
         <Onboarding

@@ -20,6 +20,7 @@ import {
   type Normalized,
 } from "./specs.js";
 import { audit, HttpError, must, type Actor } from "../operations/helpers.js";
+import { readImportJson } from "./protected-json.js";
 import { snapshot } from "../operations/domain.js";
 const delegates: Record<string, string> = {
   EQUIPMENT: "equipment",
@@ -774,7 +775,7 @@ export async function applyChunk(db: PrismaClient, id: string, user: Actor) {
           409,
           "Gere e confirme uma prévia antes de importar",
         );
-      const payload = batch.payload as any;
+      const payload = readImportJson(batch.payload, "payload") as any;
       if (
         batch.sourceConfig?.target === "EQUIPMENT" &&
         payload?.formatVersion !== 2

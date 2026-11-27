@@ -230,13 +230,15 @@ function Users({
                   </td>
                   <td>
                     <div className="row-actions">
-                      <button
-                        className="small secondary"
-                        onClick={() => setEditing(u)}
-                      >
-                        Editar
-                      </button>
-                      {u.id !== current.id && (
+                      {(u.role !== "ADMIN" || u.id === current.id) && (
+                        <button
+                          className="small secondary"
+                          onClick={() => setEditing(u)}
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {u.id !== current.id && u.role !== "ADMIN" && (
                         <button
                           className="small secondary"
                           onClick={() => {
@@ -248,7 +250,7 @@ function Users({
                           Redefinir senha
                         </button>
                       )}
-                      {u.id !== current.id && (
+                      {u.id !== current.id && u.role !== "ADMIN" && (
                         <button
                           className="small secondary danger-text"
                           aria-label={"Remover " + u.name}
