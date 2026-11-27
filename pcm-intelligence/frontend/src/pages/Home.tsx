@@ -96,7 +96,6 @@ export function HomePage({
   onNavigate: Navigate;
   onTutorial: () => void;
 }) {
-  const allowed = new Set(allowedEntries(user).map((e) => e.id));
   const shortcuts = allowedEntries(user).filter((e) =>
     [
       "orders",
@@ -148,26 +147,89 @@ export function HomePage({
     alertIcons = { critical: AlertTriangle, warning: Clock3 };
   return (
     <>
-      <div className="home-intro">
-        <div>
-          <h2>Panorama da manutenção</h2>
-          <p>Acompanhe pendências, programação e próximos vencimentos.</p>
+      <div className="home-overview">
+        <div className="home-intro">
+          <div>
+            <h2>Visão da operação</h2>
+            <p>Ordens, programação da equipe e manutenção preventiva.</p>
+            <div className="row-actions">
+              <button
+                className="home-primary"
+                onClick={() => onNavigate("orders")}
+              >
+                <ClipboardList size={17} /> Ordens de serviço{" "}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+          <div className="home-refresh">
+            <span>
+              {data
+                ? "Atualizado em " + dateTime(data.asOf)
+                : loading
+                  ? "Buscando dados"
+                  : "Atualização indisponível"}
+            </span>
+            <button
+              className="secondary small"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              <RefreshCw size={15} />
+              Atualizar
+            </button>
+          </div>
         </div>
-        <div className="home-refresh">
-          <span>
-            {data
-              ? "Atualizado em " + dateTime(data.asOf)
-              : "Carregando informações"}
-          </span>
-          <button
-            className="secondary small"
-            onClick={onRefresh}
-            disabled={loading}
-          >
-            <RefreshCw size={15} />
-            Atualizar
-          </button>
-        </div>
+        {data && (
+          <section className="panel home-today">
+            <div className="block-heading">
+              <h2>
+                <CalendarClock size={19} /> Agenda de hoje
+              </h2>
+              <button
+                className="text-button"
+                onClick={() => onNavigate("scheduling")}
+              >
+                Abrir agenda
+                <ArrowRight size={14} />
+              </button>
+            </div>
+            {!data.today.length ? (
+              <div className="home-empty">
+                <CalendarClock size={31} />
+                <h3>Sem reservas abertas hoje</h3>
+                <p>As atividades confirmadas aparecem aqui.</p>
+              </div>
+            ) : (
+              <div className="today-list">
+                {data.today.slice(0, 3).map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => onNavigate("scheduling", { recordId: a.id })}
+                  >
+                    <span className="today-time">
+                      {clock(a.startsAt)}
+                      <small>{clock(a.endsAt)}</small>
+                    </span>
+                    <span>
+                      <b>
+                        {equipmentCode(
+                          lookups?.equipment.find(
+                            (e) => e.id === a.equipmentId,
+                          ) || { id: a.equipmentId },
+                        )}{" "}
+                        · {a.reference}
+                      </b>
+                      <small>{a.title}</small>
+                      <em>{a.technician}</em>
+                    </span>
+                    <ArrowUpRight size={14} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
       <State error={error} loading={loading} />
       {data && (
@@ -225,6 +287,95 @@ export function HomePage({
               </button>
             ))}
           </div>
+          <div className="home-columns home-worklist">
+            <section className="panel home-attention">
+              <div className="block-heading">
+                <div>
+                  <h2>Precisa de atenção</h2>
+                </div>
+                <button
+                  className="text-button"
+                  onClick={() => onNavigate("alerts")}
+                >
+                  Ver alertas
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+              {!data.alerts.length ? (
+                <div className="home-empty positive">
+                  <CheckCircle2 size={30} />
+                  <h3>Nenhuma pendência identificada</h3>
+                  <p>
+                    Os registros disponíveis não apresentam os atrasos ou
+                    bloqueios acompanhados por este painel.
+                  </p>
+                </div>
+              ) : (
+                <div className="attention-list">
+                  {data.alerts.slice(0, 5).map((a) => {
+                    const Icon =
+                      alertIcons[a.level as keyof typeof alertIcons] ||
+                      AlertTriangle;
+                    return (
+                      <button
+                        key={a.id}
+                        className={"attention-item " + a.level}
+                        onClick={() =>
+                          onNavigate(a.module, {
+                            recordId: a.recordId,
+                            overdue: a.overdue,
+                          })
+                        }
+                      >
+                        <span className="attention-icon">
+                          <Icon size={19} />
+                        </span>
+                        <span>
+                          <b>{a.title}</b>
+                          <small>{a.description}</small>
+                          <em>{dateTime(a.dueAt)}</em>
+                        </span>
+                        <ArrowUpRight size={15} />
+                      </button>
+                    );
+                  })}
+                  {data.counts.alerts > Math.min(5, data.alerts.length) && (
+                    <p className="muted">
+                      Exibindo {Math.min(5, data.alerts.length)} de{" "}
+                      {data.counts.alerts} registros com pendências. Consulte as
+                      áreas para acompanhar todos.
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+            <section className="home-shortcuts-section">
+              <div className="block-heading">
+                <div>
+                  <h2>Acesso rápido</h2>
+                </div>
+                <span className="muted">
+                  {data.counts.equipment} equipamentos cadastrados
+                </span>
+              </div>
+              <div className="home-shortcuts">
+                {shortcuts.map((e) => (
+                  <button
+                    key={e.id}
+                    className="shortcut-card"
+                    onClick={() => onNavigate(e.id)}
+                    aria-label={"Acessar " + e.label.toLowerCase()}
+                  >
+                    <span>
+                      <e.icon size={22} />
+                    </span>
+                    <strong>{e.label}</strong>
+                    <ArrowUpRight size={14} />
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
           {pending.length > 0 && (
             <section className="setup-banner">
               <div className="setup-heading">
@@ -260,159 +411,6 @@ export function HomePage({
               </div>
             </section>
           )}
-          <section className="home-shortcuts-section">
-            <div className="block-heading">
-              <div>
-                <span className="section-kicker">ACESSO RÁPIDO</span>
-                <h2>Sua rotina, a um clique</h2>
-              </div>
-              <span className="muted">
-                {data.counts.equipment} equipamentos cadastrados
-              </span>
-            </div>
-            <div className="home-shortcuts">
-              {shortcuts.map((e) => (
-                <button
-                  key={e.id}
-                  className="shortcut-card"
-                  onClick={() => onNavigate(e.id)}
-                  aria-label={"Acessar " + e.label.toLowerCase()}
-                >
-                  <span>
-                    <e.icon size={22} />
-                  </span>
-                  <strong>{e.label}</strong>
-                  <ArrowUpRight size={14} />
-                </button>
-              ))}
-            </div>
-          </section>
-          <div className="home-columns">
-            <section className="panel home-attention">
-              <div className="block-heading">
-                <div>
-                  <span className="section-kicker">PRIORIDADES</span>
-                  <h2>Precisa de atenção</h2>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => onNavigate("alerts")}
-                >
-                  Ver alertas
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-              {!data.alerts.length ? (
-                <div className="home-empty positive">
-                  <CheckCircle2 size={30} />
-                  <h3>Nenhuma pendência identificada</h3>
-                  <p>
-                    Os registros disponíveis não apresentam os atrasos ou
-                    bloqueios acompanhados por este painel.
-                  </p>
-                </div>
-              ) : (
-                <div className="attention-list">
-                  {data.alerts.map((a) => {
-                    const Icon =
-                      alertIcons[a.level as keyof typeof alertIcons] ||
-                      AlertTriangle;
-                    return (
-                      <button
-                        key={a.id}
-                        className={"attention-item " + a.level}
-                        onClick={() =>
-                          onNavigate(a.module, {
-                            recordId: a.recordId,
-                            overdue: a.overdue,
-                          })
-                        }
-                      >
-                        <span className="attention-icon">
-                          <Icon size={19} />
-                        </span>
-                        <span>
-                          <b>{a.title}</b>
-                          <small>{a.description}</small>
-                          <em>{dateTime(a.dueAt)}</em>
-                        </span>
-                        <ArrowUpRight size={15} />
-                      </button>
-                    );
-                  })}
-                  {data.counts.alerts > data.alerts.length && (
-                    <p className="muted">
-                      Exibindo {data.alerts.length} de {data.counts.alerts}{" "}
-                      registros com pendências. Consulte as áreas para
-                      acompanhar todos.
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
-            <section className="panel home-today">
-              <div className="block-heading">
-                <div>
-                  <span className="section-kicker">PROGRAMAÇÃO</span>
-                  <h2>Agenda de hoje</h2>
-                </div>
-                <button
-                  className="text-button"
-                  onClick={() => onNavigate("scheduling")}
-                >
-                  Abrir agenda
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-              {!data.today.length ? (
-                <div className="home-empty">
-                  <CalendarClock size={31} />
-                  <h3>Sem reservas abertas hoje</h3>
-                  <p>
-                    Atividades confirmadas na agenda aparecerão aqui com seus
-                    horários e responsáveis.
-                  </p>
-                  {allowed.has("scheduling") && (
-                    <button
-                      className="secondary small"
-                      onClick={() => onNavigate("scheduling")}
-                    >
-                      Acessar programação
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="today-list">
-                  {data.today.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() =>
-                        onNavigate("scheduling", { recordId: a.id })
-                      }
-                    >
-                      <span className="today-time">
-                        {clock(a.startsAt)}
-                        <small>{clock(a.endsAt)}</small>
-                      </span>
-                      <span>
-                        <b>
-                          {equipmentCode(
-                            lookups?.equipment.find(
-                              (e) => e.id === a.equipmentId,
-                            ) || { id: a.equipmentId },
-                          )}{" "}
-                          · {a.reference}
-                        </b>
-                        <small>{a.title}</small>
-                        <em>{a.technician}</em>
-                      </span>
-                      <ArrowUpRight size={14} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
           <div className="home-columns home-bottom">
             <section className="panel home-upcoming">
               <div className="block-heading">

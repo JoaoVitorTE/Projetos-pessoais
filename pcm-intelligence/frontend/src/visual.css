@@ -6,14 +6,13 @@
   --workspace-glow: #9ac8f84d;
   --workspace-wash: #a7e5d34d;
   --header-surface: #f9fcffe8;
-  --danger-ink: #a83237;
+  --danger-ink: var(--critical-ink);
 }
 
 :root[data-theme="dark"] {
   --workspace-glow: #20588a46;
   --workspace-wash: #12675030;
   --header-surface: #102638ec;
-  --danger-ink: #ffacaa;
 }
 
 .workspace-shell {
@@ -320,5 +319,494 @@ button,
     animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Give persistent navigation its own column and keep the workspace calm and readable. */
+:root {
+  --bg: #eef3f5;
+  --surface-raised: #f5f8fa;
+  --line: #d4e0e6;
+}
+
+:root[data-theme="dark"] {
+  --bg: #111d26;
+  --surface: #192a36;
+  --surface-raised: #203441;
+  --line: #364c5c;
+  --muted: #bacdd9;
+  --header-surface: #192a36;
+}
+
+.workspace-shell {
+  background: var(--bg);
+}
+
+.workspace-content .page-title p,
+.workspace-breadcrumb,
+.workspace-breadcrumb button {
+  font-size: 13px;
+}
+
+.workspace-content[data-module="home"] > .page-title :is(.eyebrow, p) {
+  display: none;
+}
+
+.workspace-content[data-module="home"] > .page-title h1 {
+  font-size: 1.65rem;
+}
+
+.workspace-content :is(.filters, .registration-filters) label {
+  font-size: 13px;
+}
+
+.workspace-content :is(.panel, .filters) {
+  box-shadow: none;
+}
+
+.workspace-content .panel p {
+  font-size: 13px;
+}
+
+.workspace-content table {
+  font-size: 13px;
+}
+
+.workspace-content table th {
+  font-size: 11px;
+  letter-spacing: 0.025em;
+}
+
+.workspace-content table thead {
+  background: var(--surface-raised);
+}
+
+.workspace-content .panel.table-wrap {
+  padding: 12px;
+}
+
+.account-trigger[aria-expanded="true"],
+.section-trigger[aria-expanded="true"] {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.section-dropdown::before {
+  position: absolute;
+  inset: -15px 0 auto;
+  height: 15px;
+  content: "";
+}
+
+.home-intro {
+  min-height: 176px;
+  padding: clamp(22px, 3vw, 42px);
+  background:
+    linear-gradient(100deg, #102c43 8%, #102c43ec 46%, #10364872),
+    url("/brand/maintenance-floor.webp") center 52% / cover,
+    #13364a;
+}
+
+.home-metric {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: inset 3px 0 0 var(--metric-accent, var(--chart-blue));
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.home-metric > strong {
+  font-size: 13px;
+}
+.home-metric > small {
+  font-size: 12px;
+}
+.metric-top {
+  margin-bottom: 12px;
+}
+
+.home-shortcuts-section {
+  margin-top: 28px;
+}
+
+.home-shortcuts .shortcut-card {
+  box-shadow: none;
+  background: var(--surface-raised);
+}
+
+@media (min-width: 1100px) {
+  .workspace-shell {
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    gap: clamp(18px, 2.5vw, 40px);
+    align-items: start;
+    padding: 0 clamp(18px, 3vw, 44px) 0 0;
+  }
+
+  .workspace-shell > .floating-header {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100dvh;
+    min-height: 440px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 26px 14px 18px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--surface);
+    backdrop-filter: none;
+    box-shadow: none;
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .floating-header .header-leading {
+    justify-content: center;
+  }
+
+  .floating-header .hamburger {
+    display: none;
+  }
+
+  .floating-header .header-sections {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin: 0;
+  }
+
+  .section-trigger {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    padding: 13px 12px;
+  }
+
+  .section-trigger.selected {
+    background: var(--blue-soft);
+    color: var(--blue);
+  }
+
+  .section-trigger > span {
+    flex: 1;
+    text-align: left;
+  }
+
+  .nav-chevron {
+    transform: rotate(-90deg);
+  }
+
+  .section-menu .section-dropdown {
+    top: 0;
+    left: calc(100% + 10px);
+  }
+
+  .section-menu .section-dropdown::before {
+    inset: 0 auto 0 -11px;
+    width: 11px;
+    height: auto;
+  }
+
+  .floating-header .header-actions {
+    margin: auto 0 0;
+    padding-top: 12px;
+    display: grid;
+    grid-template-columns: max-content max-content 1fr;
+    align-items: center;
+    justify-items: start;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .floating-header .workspace-mode {
+    grid-column: 1 / -1;
+  }
+  .floating-header .account-menu {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .floating-header .account-trigger {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 8px 5px;
+  }
+  .floating-header .account-name {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .account-menu .account-dropdown {
+    inset: auto auto 0 calc(100% + 10px);
+  }
+
+  .account-menu .account-dropdown::before {
+    inset: 0 auto 0 -11px;
+    width: 11px;
+    height: auto;
+  }
+
+  .workspace-content {
+    width: 100%;
+    padding: 26px 0 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .modern-login {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 72px);
+    padding: clamp(18px, 2.6vw, 38px);
+    background: var(--bg);
+  }
+
+  .modern-login .login-story {
+    min-height: calc(100dvh - 2 * clamp(18px, 2.6vw, 38px));
+    padding-inline: clamp(32px, 6vw, 88px);
+    border-radius: 26px;
+  }
+
+  .modern-login .login-form {
+    background: transparent;
+  }
+
+  .modern-login .login-box {
+    width: 100%;
+    max-width: 430px;
+    box-shadow: var(--shadow);
+  }
+}
+
+/* Operational overview and indicator grid. */
+.workspace-content .page-title h1,
+.home-intro h2,
+.block-heading h2,
+.modern-login .login-story h1,
+.modern-login .login-box h2 {
+  font-family: var(--heading-font);
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+
+.home-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.home-overview .home-intro {
+  grid-column: 1 / -1;
+  min-width: 0;
+  min-height: 250px;
+  margin: 0;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-direction: column;
+  background:
+    linear-gradient(103deg, #0b2338 5%, #0b2338e8 52%, #0b233862),
+    url("/brand/maintenance-floor.webp") center 49% / cover,
+    #13364a;
+}
+
+.home-overview:has(.home-today) .home-intro {
+  grid-column: auto;
+}
+
+.home-overview .home-intro h2 {
+  font-size: clamp(2.15rem, 3.8vw, 3.6rem);
+}
+
+.home-overview .home-intro .row-actions {
+  margin-top: 20px;
+}
+
+.home-primary {
+  padding: 11px 14px;
+  background: #b5f3dd;
+  color: #103b35;
+  border: 1px solid #b5f3dd;
+}
+
+.home-primary:hover {
+  background: #d1f8e9;
+}
+
+.home-intro .home-refresh {
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  gap: 12px;
+}
+
+.home-overview .home-today {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 22px;
+  border-top: 3px solid var(--chart-green);
+}
+
+.home-today .block-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-today .block-heading h2 svg {
+  color: var(--green);
+  flex: none;
+}
+
+.home-overview .home-empty {
+  min-height: 140px;
+  margin: auto;
+  padding: 16px;
+}
+
+.home-overview .today-list > button {
+  padding: 10px 0;
+}
+
+.home-metric > b,
+.dashboard-indicator strong {
+  font-family: var(--heading-font);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.home-metric .metric-top {
+  margin-bottom: 8px;
+}
+
+.home-worklist {
+  align-items: start;
+}
+
+.home-worklist .home-shortcuts-section {
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.home-worklist .home-shortcuts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-worklist .shortcut-card {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 24px 8px 8px;
+  text-align: left;
+}
+
+.home-worklist .shortcut-card > span {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+}
+
+.home-worklist .shortcut-card > span > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.home-worklist .shortcut-card > strong {
+  font-size: 12px;
+}
+
+.home-worklist .shortcut-card > svg {
+  width: 12px;
+}
+
+.dashboard-indicators {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 195px), 1fr));
+  gap: 12px;
+  margin-block: 18px 24px;
+}
+
+.dashboard-indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.dashboard-indicator > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--blue);
+}
+
+.dashboard-indicator span,
+.dashboard-indicator strong {
+  display: block;
+}
+
+.dashboard-indicator span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dashboard-indicator strong {
+  font-size: clamp(1.45rem, 2.2vw, 1.95rem);
+  line-height: 1.1;
+  margin-top: 3px;
+}
+
+@media (max-width: 800px) {
+  .home-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-overview .home-intro {
+    min-height: 220px;
+  }
+  .home-overview .home-today {
+    min-height: 0;
+  }
+
+  .home-overview .home-empty {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 4px 12px;
+    align-items: center;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+  }
+
+  .home-overview .home-empty > svg {
+    grid-row: span 2;
+    width: 24px;
+    margin: 0;
+  }
+
+  .home-overview .home-empty :is(h3, p) {
+    margin: 0;
   }
 }

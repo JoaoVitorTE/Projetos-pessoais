@@ -2795,7 +2795,7 @@ summary:focus-visible {
 }
 .pending-tag {
   font-size: 11px;
-  color: #a57528;
+  color: var(--warning-ink);
 }
 .pending-tag small {
   display: block;

@@ -16,6 +16,9 @@
   --blue-soft: #e4effd;
   --accent-border: #6e9fb8;
   --focus: #1766b2;
+  --warning-ink: #835305;
+  --critical-ink: #a83237;
+  --heading-font: "Barlow Semi Condensed", "Segoe UI", system-ui, sans-serif;
   --chart-blue: #266eb8;
   --chart-green: #00826b;
   --shadow: 0 8px 28px #153d6010;
@@ -540,6 +543,8 @@ th {
   --blue-soft: #193853;
   --accent-border: #5685a5;
   --focus: #97ccff;
+  --warning-ink: #f0c47a;
+  --critical-ink: #ffacaa;
   --chart-blue: #75b6ff;
   --chart-green: #5dd8b1;
   --shadow: 0 10px 28px #010a1660;
@@ -885,7 +890,7 @@ td small {
   border-radius: 4px;
   background: var(--soft);
   color: var(--green);
-  font-size: 9px;
+  font-size: 11px;
   white-space: nowrap;
   border: 1px solid var(--line);
 }
@@ -893,17 +898,17 @@ td small {
 .status-pending,
 .status-waiting_part,
 .status-waiting_vendor {
-  color: #ae6414;
+  color: var(--warning-ink);
   background: #fff4e2;
 }
 .status-cancelled {
-  color: #8c5960;
+  color: var(--critical-ink);
   background: #f9edf0;
 }
 .status-in_progress,
 .status-checking,
 .status-finance {
-  color: #3779a3;
+  color: var(--blue);
   background: #e9f2fa;
 }
 .priority {
@@ -912,10 +917,10 @@ td small {
 }
 .priority-3,
 .late {
-  color: #c05240 !important;
+  color: var(--critical-ink) !important;
 }
 .priority-2 {
-  color: #aa7a27;
+  color: var(--warning-ink);
 }
 .priority-1 {
   color: var(--muted);
@@ -1599,11 +1604,11 @@ a {
 }
 .schedule-status.blocked {
   background: #e9984620;
-  color: #a15a16;
+  color: var(--warning-ink);
 }
 .schedule-status.in_progress {
   background: #3787cb18;
-  color: #2979b7;
+  color: var(--blue);
 }
 .schedule-action {
   margin: 24px 0;

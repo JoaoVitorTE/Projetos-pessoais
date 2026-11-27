@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
+import "@fontsource/barlow-semi-condensed/latin-700.css";
 import "./styles.css";
 import "./experience.css";
 import "./visual.css";

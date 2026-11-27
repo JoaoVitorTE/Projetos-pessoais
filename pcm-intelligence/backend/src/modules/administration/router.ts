@@ -367,6 +367,161 @@ export function administrationRouter(db: PrismaClient) {
       res.json(row);
     }),
   );
+  r.delete(
+    "/users/:id",
+    run(async (req, res) => {
+      requireRole(res, ["ADMIN"]);
+      const user = actor(res),
+        id = req.params.id;
+      if (id === user.id)
+        throw new HttpError(409, "Sua própria conta não pode ser removida.");
+      const outcome = await db.$transaction(async (tx) => {
+        await adminLock(tx, user.id);
+        await scheduleLock(tx);
+        await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${id} FOR UPDATE`;
+        const before = must(
+          await tx.user.findUnique({
+            where: { id },
+            include: {
+              role: true,
+              _count: {
+                select: {
+                  audits: true,
+                  orderChanges: true,
+                  importBatches: true,
+                  scheduleChanges: true,
+                },
+              },
+            },
+          }),
+        );
+        const settings = await tx.sapWorkbookSettings.findFirst({
+          where: { actorId: id },
+          select: { id: true },
+        });
+        if (settings)
+          throw new HttpError(
+            409,
+            "Outro administrador autorizado deve salvar o mapeamento SAP antes de remover esta conta.",
+          );
+        await tx.session.deleteMany({ where: { userId: id } });
+        if (Object.values(before._count).some(Boolean)) {
+          const after = await tx.user.update({
+            where: { id },
+            data: { active: false },
+            include: { role: true },
+          });
+          await audit(tx, user, "USER_DEACTIVATED", "User", {
+            before: publicUser(before),
+            after: publicUser(after),
+          });
+          return "deactivated";
+        }
+        await tx.user.delete({ where: { id } });
+        await audit(tx, user, "USER_DELETED", "User", {
+          before: publicUser(before),
+        });
+        return "deleted";
+      });
+      res.json({ outcome });
+    }),
+  );
+  r.delete(
+    "/technicians/:id",
+    run(async (req, res) => {
+      requireRole(res, ["ADMIN", "MANAGER", "PLANNER"]);
+      const id = req.params.id;
+      const outcome = await db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(739104,2)`;
+        await scheduleLock(tx);
+        const row = must(
+          await tx.technician.findUnique({
+            where: { id },
+            include: {
+              user: { select: { id: true } },
+              _count: {
+                select: {
+                  workWindows: true,
+                  absences: true,
+                  assignments: true,
+                  plans: true,
+                  orders: true,
+                },
+              },
+            },
+          }),
+        );
+        const { _count, user: account, ...before } = row;
+        if (account)
+          throw new HttpError(
+            409,
+            "Remova o vínculo entre o técnico e a conta de usuário primeiro.",
+          );
+        if (
+          await tx.technicianAssignment.count({
+            where: {
+              technicianId: id,
+              status: { in: ACTIVE },
+              OR: [{ endsAt: { gt: new Date() } }, { status: "IN_PROGRESS" }],
+            },
+          })
+        )
+          throw new HttpError(
+            409,
+            "Reprograme ou cancele as reservas futuras antes de remover o técnico.",
+          );
+        const hasImport = await tx.importChange.count({
+          where: { entityId: id, entityType: "TECHNICIAN", undone: false },
+        });
+        if (hasImport || Object.values(_count).some(Boolean)) {
+          const after = await tx.technician.update({
+            where: { id },
+            data: { active: false },
+          });
+          await audit(tx, actor(res), "TECHNICIAN_DEACTIVATED", "Technician", {
+            before,
+            after,
+          });
+          return "deactivated";
+        }
+        await tx.technician.delete({ where: { id } });
+        await audit(tx, actor(res), "TECHNICIAN_DELETED", "Technician", {
+          before,
+        });
+        return "deleted";
+      });
+      res.json({ outcome });
+    }),
+  );
+  r.delete(
+    "/sectors/:id",
+    run(async (req, res) => {
+      requireRole(res, ["ADMIN", "MANAGER", "PLANNER"]);
+      const id = req.params.id;
+      await db.$transaction(async (tx) => {
+        await scheduleLock(tx);
+        const before = must(await tx.sector.findUnique({ where: { id } }));
+        const equipment = await tx.equipment.count({ where: { sectorId: id } });
+        if (equipment)
+          throw new HttpError(
+            409,
+            `Este setor tem ${equipment} equipamento(s) vinculado(s). Mova os equipamentos para outro setor antes de removê-lo.`,
+          );
+        if (
+          await tx.importChange.count({
+            where: { entityId: id, entityType: "SECTOR", undone: false },
+          })
+        )
+          throw new HttpError(
+            409,
+            "O setor faz parte do histórico de uma importação ativa. Revise o lote antes de removê-lo.",
+          );
+        await tx.sector.delete({ where: { id } });
+        await audit(tx, actor(res), "SECTOR_DELETED", "Sector", { before });
+      });
+      res.json({ outcome: "deleted" });
+    }),
+  );
   r.get(
     "/audit",
     run(async (req, res) => {
